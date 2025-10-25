@@ -1,0 +1,125 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --leva-sizes-rootWidth: 340px;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+}
+
+body {
+  margin: 0;
+  background-color: #96b4eb;
+  background-image: linear-gradient(19deg, #96b4eb 0%, #ffffff 100%);
+}
+
+.react-calendar {
+  width: 100%;
+  height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 500%;
+}
+
+.react-calendar__tile--disabled {
+  background: #ff0000;
+  color: #a0a0a0;
+  opacity: 0.6;
+}
+
+.react-calendar__month-view__weekdays__weekday {
+  color: #000000;
+}
+
+.react-calendar__month-view__days__day,
+.react-calendar__month-view__weekdays__weekday,
+.react-calendar__navigation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.react-calendar__month-view__days__day--weekend {
+  color: #d10000;
+}
+
+.react-calendar__tile--active {
+  background: #006edc;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.react-calendar__navigation {
+  color: #000000;
+  font-size: x-large;
+}
+
+.react-calendar__navigation__prev2-button,
+.react-calendar__navigation__prev-button,
+.react-calendar__navigation__next-button,
+.react-calendar__navigation__next2-button {
+  font-size: 0%;
+  color: #ffffff;
+}
+
+.hovered:hover .hover-arrow,
+.active-arrow {
+  visibility: visible;
+}
+
+.hover-arrow {
+  visibility: hidden;
+}
+
+.text-animation {
+  animation: pulse 2s infinite;
+  color: blue;
+  font-size: 2vw;
+  text-shadow: 0 0 5px #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.checkmark-animation {
+  animation: bounce 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+  40% {transform: translateY(-30px);}
+  60% {transform: translateY(-15px);}
+}
+
+.item-enter {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+.item-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 500ms, transform 500ms;
+}
+
+.item-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.item-exit-active {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 500ms, transform 500ms;
+}
