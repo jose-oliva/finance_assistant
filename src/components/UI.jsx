@@ -14,9 +14,20 @@ import '../index.css';
 import { FaMicrophone } from "react-icons/fa6";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { endOfISOWeek, format, subMinutes } from 'date-fns';
+import SavingsOverview from "./recomendations/SavingsOverview";
+import EmergencyFundPlan from "./recomendations/savingPlans/EmergencyPlanFund";
+import ShortTermGoalsPlan from "./recomendations/savingPlans/ShortTermGoalsPlan";
+import LongTermPlan from "./recomendations/savingPlans/LongTermPlan";
+import EndOfMonthSurvivalPlan from "./recomendations/EndOfMonthSurvivalPlan";
+
+
+
+
 
 export const UI = ({ hidden, ...props }) => {
   const [loadingR, setLoadingR] = useState(true);
+  const [activePlan, setActivePlan] = useState(null);
+
 
   const initialData = [
     { nombre: 'NOMBRE1', horario: 'HORARIO1' },
@@ -102,6 +113,34 @@ export const UI = ({ hidden, ...props }) => {
     const period = hour < 12 || hour === 24 ? 'AM' : 'PM';
     return `${(hour % 12) || 12}:${minute.toString().padStart(2, '0')} ${period}`;
   };
+
+  const recs = [
+  {
+    id: 1,
+    title: "Reduce gastos variables",
+    description:
+      "Esta semana gastaste ~32% en comida fuera. Si bajas a 20%, ahorras ~$1,200 MXN/mes.",
+    priority: "alta",
+    actionText: "Ver cómo ahorrar",
+  },
+  {
+    id: 2,
+    title: "Fondo de emergencia",
+    description:
+      "Tienes ~1.4 meses de gastos fijos cubiertos. Meta recomendada: 3 meses.",
+    priority: "media",
+    actionText: "Plan de ahorro",
+  },
+  {
+    id: 3,
+    title: "Inversión segura",
+    description:
+      "Te quedan ~$1,800 MXN libres al mes. Puedes ponerlos en un instrumento 7-10% anual.",
+    priority: "baja",
+    actionText: "Ver opciones",
+  },
+];
+
 
   useEffect(() => {
     const timePattern = /(\d{1,2}):?(\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?).*?(\d{1,2}):?(\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?)/i;
@@ -750,7 +789,7 @@ export const UI = ({ hidden, ...props }) => {
               </div>
             </div>
           </div>
-          {!matriculaValid ? (
+          {/* {!matriculaValid ? (
             <div className="flex flex-col items-center justify-center w-3/5">
               <div
                 style={{
@@ -1098,7 +1137,59 @@ export const UI = ({ hidden, ...props }) => {
                 )}
               </div>
             </div>
-          )}
+          )}     */}
+          <div className="flex flex-col items-center justify-center w-3/5 h-full p-8">
+
+            <div className="flex flex-col w-3/5 h-full p-8 ">
+              {activePlan === null && (
+                <SavingsOverview
+                  monthlyExpenses={20000}
+                  emergencyMonthlyDeposit={5000}
+                  shortTermGoalCost={15000}
+                  shortTermDepositA={2000}
+                  longTermMonthly={2000}
+                  onSelect={(planKey) => setActivePlan(planKey)}
+                />
+              )}
+
+              {activePlan === "emergency" && (
+                <EmergencyFundPlan
+                  monthlyExpenses={20000}
+                  emergencyMonthlyDeposit={5000}
+                  onBack={() => setActivePlan(null)}
+                />
+              )}
+
+              {activePlan === "shortTerm" && (
+                <ShortTermGoalsPlan
+                  shortTermGoalCost={15000}
+                  depositSlow={2000}
+                  depositFast={3000}
+                  onBack={() => setActivePlan(null)}
+                />
+              )}
+
+              {activePlan === "longTerm" && (
+                <LongTermPlan
+                  monthlyLongTerm={2000}
+                  onBack={() => setActivePlan(null)}
+                />
+              )}
+            </div>
+
+            
+
+
+
+            {/* <EndOfMonthSurvivalPlan
+              cashAvailable={1800}
+              daysLeft={5}
+              essentialBills={900}
+              minDebtPayment={200}
+            /> */}
+
+
+          </div>
         </>
       ) : (
         <div style={{ position: 'relative' }} className="flex justify-start w-full h-full">
