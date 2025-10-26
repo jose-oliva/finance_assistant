@@ -8,7 +8,7 @@ export default function FinancePanel() {
   return (
     <div className="p-8 w-full max-w-5xl">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold">Asistente Financiero</h2>
+        <h2 className="text-2xl font-semibold">Finance Assistant</h2>
         <div className="flex gap-2">
           <button
             className={`px-4 py-2 rounded border ${tab === "questionnaire" ? "bg-blue-600 text-white" : "bg-white"}`}

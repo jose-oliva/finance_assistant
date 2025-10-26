@@ -1,23 +1,24 @@
-// usando zustand v4+
+// using zustand v4+
 import create from "zustand";
-
-const CATS = ["Hogar", "Oseo", "Comida"];
 
 export const useBudgetStore = create((set, get) => ({
   budget: 0,
-  categories: ["Hogar", "Ocio", "Comida"],
-  allocation: { Hogar: 0, Ocio: 0, Comida: 0 },
+  categories: ["Home", "Leisure", "Food"],
+  allocation: { Home: 0, Leisure: 0, Food: 0 },
 
   demoDay: 10,
 
   expenses: [],
 
   setBudget: (n) => set({ budget: Math.max(0, Number(n) || 0) }),
-  setAlloc: (cat, n) => set((s) => ({
-    allocation: { ...s.allocation, [cat]: Math.max(0, Number(n) || 0) },
-  })),
+  setAlloc: (cat, n) =>
+    set((s) => ({
+      allocation: { ...s.allocation, [cat]: Math.max(0, Number(n) || 0) },
+    })),
   clearAllocations: () =>
-    set({ allocation: Object.fromEntries(["Hogar","Ocio","Comida"].map(c => [c, 0])) }),
+    set({
+      allocation: Object.fromEntries(["Home", "Leisure", "Food"].map((c) => [c, 0])),
+    }),
 
   addExpense: (payload) => {
     const id = crypto.randomUUID();
@@ -25,9 +26,15 @@ export const useBudgetStore = create((set, get) => ({
     const dday = get().demoDay;
     const date = payload?.date
       ? new Date(payload.date)
-      : (dday != null ? new Date(now.getFullYear(), now.getMonth(), dday) : new Date());
+      : dday != null
+      ? new Date(now.getFullYear(), now.getMonth(), dday)
+      : new Date();
+
     const amt = Math.max(0, Number(payload.amount) || 0);
-    const category = ["Hogar","Ocio","Comida"].includes(payload.category) ? payload.category : "Otros";
+    const category = ["Home", "Leisure", "Food"].includes(payload.category)
+      ? payload.category
+      : "Other";
+
     set((s) => ({ expenses: [...s.expenses, { id, category, amount: amt, date }] }));
   },
 
@@ -42,27 +49,29 @@ export const useBudgetStore = create((set, get) => ({
     return get().expenses.reduce((acc, e) => (e.date.getTime() <= t ? acc + e.amount : acc), 0);
   },
 
+  // Cumulative daily spend for the current month
   realByDay() {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    // normalizamos fechas al mes actual; si llegan de otro mes se ignoran
+    // keep only this month's expenses
     const exps = get().expenses.filter(
       (e) => e.date.getFullYear() === year && e.date.getMonth() === month
     );
 
-    // acumulado día a día
+    // cumulative by day
     const sums = Array.from({ length: daysInMonth }, () => 0);
     for (const e of exps) {
-      const d = e.date.getDate();       // 1..N
+      const d = e.date.getDate(); // 1..N
       for (let i = d - 1; i < daysInMonth; i++) sums[i] += e.amount;
     }
     return sums;
   },
 }));
 
+// expose for console snippets/demos
 if (typeof window !== "undefined") {
   window.useBudgetStore = useBudgetStore;
 }

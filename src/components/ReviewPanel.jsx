@@ -1,4 +1,3 @@
-// src/components/ReviewPanel.jsx
 import React, { useMemo } from "react";
 import {
   ResponsiveContainer,
@@ -17,7 +16,7 @@ import { useBudgetStore } from "./BudgetStore";
 export default function ReviewPanel() {
   const budget = useBudgetStore((s) => s.budget);
 
-  // Intentamos leer realByDay del store
+  // Try to read realByDay from the store (function or array)
   let realSeries = null;
   try {
     const maybe = useBudgetStore((s) => s.realByDay);
@@ -29,8 +28,8 @@ export default function ReviewPanel() {
   if (!budget || budget <= 0) {
     return (
       <div className="w-full max-w-3xl mx-auto p-8 text-center text-slate-500">
-        <h2 className="text-2xl font-semibold mb-2">Sin presupuesto registrado</h2>
-        <p>Ingresa un presupuesto en el Cuestionario para ver la gráfica.</p>
+        <h2 className="text-2xl font-semibold mb-2">No budget yet</h2>
+        <p>Enter a budget in the Questionnaire to see the chart.</p>
       </div>
     );
   }
@@ -46,7 +45,7 @@ export default function ReviewPanel() {
   const { data, projTotal, margin, spentSoFar } = useMemo(() => {
     const idealPerDay = budget / daysInMonth;
 
-    // Serie real: zeros (o del store) hasta "today"
+    // Real series: from store if present, otherwise zeros up to "today"
     const real = Array.from({ length: daysInMonth }, (_, i) => {
       if (Array.isArray(realSeries) && i < realSeries.length) return Number(realSeries[i] || 0);
       return i + 1 <= today ? 0 : 0;
@@ -57,7 +56,7 @@ export default function ReviewPanel() {
     const projectionEnd = Math.round(dailySlope * daysInMonth);
     const marginVsBudget = budget - projectionEnd;
 
-    // 🔹 Punto base en 0 para que TODO arranque “desde cero”
+    // Force the chart to start at 0
     const baseRow = { day: 0, ideal: 0, real: 0, proj: 0 };
 
     const rows = Array.from({ length: daysInMonth }, (_, i) => {
@@ -80,35 +79,36 @@ export default function ReviewPanel() {
 
   const isGood = margin >= 0;
 
+  // Status light
   const percentUsed = (spentSoFar / budget) * 100;
-  let stateText = "🟢 Buen estado financiero";
+  let stateText = "🟢 Good financial state";
   let stateClass = "text-emerald-600";
   if (percentUsed > 60 && percentUsed <= 90) {
-    stateText = "🟡 Estado regular";
+    stateText = "🟡 Fair state";
     stateClass = "text-amber-500";
   } else if (percentUsed > 90) {
-    stateText = "🔴 Mal estado";
+    stateText = "🔴 Bad state";
     stateClass = "text-rose-600";
   }
 
   return (
     <div className="w-full">
       <div className="mx-auto max-w-5xl rounded-2xl border border-blue-300 bg-white/70 backdrop-blur p-8 shadow-[0_20px_80px_-20px_rgba(16,6,159,0.25)]">
-        {/* Encabezado */}
+        {/* Header */}
         <div className="mb-8">
           <h2 className="text-2xl md:text-3xl font-semibold">
-            Review — <span className="text-slate-700">Tendencia y Predicción</span>
+            Review — <span className="text-slate-700">Trend & Forecast</span>
           </h2>
           <p className="mt-1 text-slate-500">
-            Ideal vs. Real (gastos registrados) vs. Proyección del mes actual.
+            Ideal vs. Actual (logged expenses) vs. Projection for the current month.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-          {/* Métricas */}
+          {/* Metrics */}
           <div className="lg:col-span-5 space-y-4">
             <div className="text-lg">
-              <div className="text-slate-600">Presupuesto:</div>
+              <div className="text-slate-600">Budget:</div>
               <div className="text-2xl font-bold text-emerald-600">
                 ${budget.toLocaleString()}
               </div>
@@ -116,21 +116,21 @@ export default function ReviewPanel() {
 
             <div className="grid grid-cols-2 gap-4 text-sm md:text-base">
               <div className="rounded-lg border p-3">
-                <div className="text-slate-500">Día del mes</div>
+                <div className="text-slate-500">Days in month</div>
                 <div className="text-xl font-semibold">{daysInMonth}</div>
               </div>
               <div className="rounded-lg border p-3">
-                <div className="text-slate-500">Hoy</div>
+                <div className="text-slate-500">Today</div>
                 <div className="text-xl font-semibold">{demoDay ?? new Date().getDate()}</div>
               </div>
               <div className="rounded-lg border p-3">
-                <div className="text-slate-500">Gasto acumulado</div>
+                <div className="text-slate-500">Cumulative spend</div>
                 <div className="text-xl font-semibold">
                   ${Number(spentSoFar || 0).toLocaleString()}
                 </div>
               </div>
               <div className="rounded-lg border p-3">
-                <div className="text-slate-500">Proyección de cierre</div>
+                <div className="text-slate-500">Projected month-end</div>
                 <div className="text-xl font-semibold">
                   ${projTotal.toLocaleString()}
                 </div>
@@ -139,30 +139,30 @@ export default function ReviewPanel() {
 
             <div className="mt-2 text-base">
               <p className={`${stateClass} font-medium`}>
-                {stateText} — Has usado {percentUsed.toFixed(1)}% del presupuesto.
+                {stateText} — You’ve used {percentUsed.toFixed(1)}% of the budget.
               </p>
 
               {isGood ? (
                 <p className="text-emerald-600">
-                  ✓ Margen estimado de <b>${(budget - projTotal).toLocaleString()}</b> contra presupuesto.
+                  ✓ Estimated margin of <b>${(budget - projTotal).toLocaleString()}</b> vs. budget.
                 </p>
               ) : (
                 <p className="text-rose-600">
-                  ⚠︎ Exceso estimado de <b>${(projTotal - budget).toLocaleString()}</b> sobre presupuesto.
+                  ⚠︎ Estimated overrun of <b>${(projTotal - budget).toLocaleString()}</b> vs. budget.
                 </p>
               )}
 
               <p className="text-slate-500 mt-2">
-                <span className="font-medium">Ideal</span>: crecimiento lineal hasta el presupuesto.
+                <span className="font-medium">Ideal</span>: linear growth up to the budget.
                 <br />
-                <span className="font-medium">Proyección</span>: tu ritmo actual extendido a fin de mes.
+                <span className="font-medium">Projection</span>: your current pace extended to month-end.
                 <br />
-                <span className="font-medium">Real</span>: suma diaria de los gastos registrados.
+                <span className="font-medium">Actual</span>: daily cumulative sum of logged expenses.
               </p>
             </div>
           </div>
 
-          {/* Gráfica */}
+          {/* Chart */}
           <div className="lg:col-span-7 h-[380px] md:h-[440px]">
             <ResponsiveContainer>
               <LineChart
@@ -171,7 +171,7 @@ export default function ReviewPanel() {
               >
                 <CartesianGrid strokeDasharray="3 3" />
 
-                {/* 🔹 Eje X numérico de 0 a fin de mes */}
+                {/* X axis from 0 to end of month */}
                 <XAxis
                   type="number"
                   dataKey="day"
@@ -180,7 +180,7 @@ export default function ReviewPanel() {
                   tickCount={7}
                 />
 
-                {/* 🔹 Eje Y siempre desde 0 */}
+                {/* Y axis always from 0 */}
                 <YAxis
                   type="number"
                   domain={[0, "auto"]}
@@ -191,11 +191,11 @@ export default function ReviewPanel() {
 
                 <Tooltip
                   formatter={(v) => `$${Number(v).toLocaleString()}`}
-                  labelFormatter={(l) => `Día ${l}`}
+                  labelFormatter={(l) => `Day ${l}`}
                 />
                 <Legend verticalAlign="top" height={36} />
 
-                {/* Banda “permitida” (verde translúcida) — de 0 al presupuesto */}
+                {/* Allowed band (0..budget) */}
                 <ReferenceArea
                   x1={0}
                   x2={daysInMonth}
@@ -218,7 +218,7 @@ export default function ReviewPanel() {
                 <Line
                   type="monotone"
                   dataKey="proj"
-                  name="Proyección"
+                  name="Projection"
                   stroke="#F59E0B"
                   strokeDasharray="6 6"
                   strokeWidth={3}
@@ -228,21 +228,21 @@ export default function ReviewPanel() {
                 <Line
                   type="monotone"
                   dataKey="real"
-                  name="Real"
+                  name="Actual"
                   stroke="#3B82F6"
                   strokeWidth={3}
                   dot={{ r: 2 }}
-                  connectNulls={false} // no une nulls
+                  connectNulls={false}
                   isAnimationActive
                 />
 
-                {/* Línea de presupuesto */}
+                {/* Budget line */}
                 <ReferenceLine
                   y={budget}
                   stroke="#9CA3AF"
                   strokeDasharray="4 4"
                   label={{
-                    value: "Presupuesto",
+                    value: "Budget",
                     position: "insideTopRight",
                     fill: "#6B7280",
                     fontSize: 12,
@@ -253,7 +253,7 @@ export default function ReviewPanel() {
             </ResponsiveContainer>
 
             <div className="text-center text-slate-500 text-sm mt-2">
-              La gráfica parte del 0 y se actualiza en cuanto el Overview registra gastos.
+              The chart starts at 0 and updates as the Overview logs expenses.
             </div>
           </div>
         </div>
