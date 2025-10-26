@@ -5,14 +5,14 @@ import { motion } from "framer-motion";
  * ExpensesOverview
  * Final screen showing floating bubbles representing budget usage for each category
  */
-export default function ExpensesOverview({ budgetData = { Hogar: { budget: 3400, spent: 0 }, Ocio: { budget: 1000, spent: 0 }, Comida: { budget: 2100, spent: 0 } } }) {
+export default function ExpensesOverview({ budgetData = { Home: { budget: 3400, spent: 0 }, Leisure: { budget: 1000, spent: 0 }, Food: { budget: 2100, spent: 0 } } }) {
   const [positions, setPositions] = useState([
     { x: 300, y: 40, vx: 0, vy: 0 },
     { x: 450, y: 40, vx: 0, vy: 0 },
     { x: 375, y: 120, vx: 0, vy: 0 },
   ]);
 
-  const categories = ["Hogar", "Ocio", "Comida"];
+  const categories = ["Home", "Leisure", "Food"];
 
   useEffect(() => {
     const animate = () => {
@@ -85,10 +85,10 @@ export default function ExpensesOverview({ budgetData = { Hogar: { budget: 3400,
       <div className="w-full max-w-4xl flex flex-col bg-white rounded-2xl shadow-lg border border-slate-200">
         <div className="p-6 pb-0">
           <h1 className="text-3xl font-bold text-slate-800 text-center mb-2">
-            Resumen de Gastos
+            Expenses Overview
           </h1>
           <p className="text-sm text-slate-500 text-center">
-            Visualización de presupuestos por categoría
+            Budget visualization by category
           </p>
         </div>
 

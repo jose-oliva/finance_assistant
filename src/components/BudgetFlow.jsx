@@ -10,15 +10,15 @@ export default function BudgetFlow() {
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [showOverview, setShowOverview] = useState(false);
   const [budgetData, setBudgetData] = useState({
-    Hogar: { budget: 3400, spent: 0 },
-    Ocio: { budget: 1000, spent: 0 },
-    Comida: { budget: 2100, spent: 0 },
+    Home: { budget: 3400, spent: 0 },
+    Leisure: { budget: 1000, spent: 0 },
+    Food: { budget: 2100, spent: 0 },
   });
 
   const categories = [
-    { name: "Hogar", budget: 3400 },
-    { name: "Ocio", budget: 1000 },
-    { name: "Comida", budget: 2100 },
+    { name: "Home", budget: 3400 },
+    { name: "Leisure", budget: 1000 },
+    { name: "Food", budget: 2100 },
   ];
 
   const currentCategory = categories[currentCategoryIndex];

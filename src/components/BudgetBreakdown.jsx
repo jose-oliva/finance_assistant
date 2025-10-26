@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
  * A vertical chart that fills up as expenses are added, with simple input at bottom right.
  */
 export default function BudgetBreakdown({
-  category = "Hogar",
+  category = "Home",
   initialTotal = 3400,
   currency = "USD",
   onNextCategory,
@@ -39,7 +39,7 @@ export default function BudgetBreakdown({
   const spentPercentage = initialTotal > 0 ? Math.min(100, Math.round((spent / initialTotal) * 100)) : 0;
   
   const isComplete = remaining === 0;
-  const isLastCategory = category === "Comida";
+  const isLastCategory = category === "Food";
 
   function addItem(e) {
     e.preventDefault();
@@ -75,7 +75,7 @@ export default function BudgetBreakdown({
         {/* Category Header */}
         <div className="p-6 pb-0">
           <h2 className="text-2xl font-bold text-slate-800 text-center">{category}</h2>
-          <p className="text-sm text-slate-500 text-center mt-1">Presupuesto: {formatter.format(initialTotal)}</p>
+          <p className="text-sm text-slate-500 text-center mt-1">Budget: {formatter.format(initialTotal)}</p>
         </div>
       {/* Main Content - Chart Left, List Right */}
       <div className="flex justify-center p-6 gap-6">
@@ -103,17 +103,17 @@ export default function BudgetBreakdown({
           {/* Chart Info */}
           <div className="text-center">
             <div className="text-lg font-semibold text-slate-800">
-              {formatter.format(spent)} gastado
+              {formatter.format(spent)} spent
             </div>
             <div className="text-sm text-slate-500">
-              {spentPercentage}% del presupuesto
+              {spentPercentage}% of budget
             </div>
           </div>
         </div>
 
         {/* Right Side - Expense List */}
         <div className="w-80 flex flex-col">
-          <div className="text-sm uppercase tracking-wide text-slate-500 mb-4">Gastos</div>
+          <div className="text-sm uppercase tracking-wide text-slate-500 mb-4">Expenses</div>
           <div className="flex-1 overflow-y-auto">
             <AnimatePresence initial={false}>
               {items.length === 0 ? (
@@ -124,7 +124,7 @@ export default function BudgetBreakdown({
                   exit={{ opacity: 0 }}
                   className="text-sm text-slate-500 text-center py-8"
                 >
-                  Aún no hay gastos
+                  No expenses yet
                 </motion.div>
               ) : (
                 <motion.div className="space-y-2">
@@ -174,13 +174,13 @@ export default function BudgetBreakdown({
             className="rounded-xl px-4 py-2 bg-slate-900 text-white text-sm font-medium hover:opacity-90 transition disabled:opacity-40"
             disabled={!input.trim()}
           >
-            Agregar
+            Add
           </button>
         </form>
         
         {/* Budget Info */}
         <div className="mt-3 text-center text-xs text-slate-500">
-          {formatter.format(remaining)} restante de {formatter.format(initialTotal)}
+          {formatter.format(remaining)} remaining out of {formatter.format(initialTotal)}
         </div>
         
         {/* Continue Button */}
@@ -195,7 +195,7 @@ export default function BudgetBreakdown({
             }}
             className="px-6 py-2 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors"
           >
-            {isLastCategory ? "Finalizar" : "Continuar"}
+            {isLastCategory ? "Finish" : "Continue"}
           </button>
         </div>
       </div>
