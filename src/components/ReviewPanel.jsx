@@ -15,13 +15,9 @@ import {
 import { useBudgetStore } from "./BudgetStore";
 
 export default function ReviewPanel() {
-  // Presupuesto en tiempo real
   const budget = useBudgetStore((s) => s.budget);
 
-  // Intentamos leer realByDay del store. Puede ser:
-  //  - un método: realByDay() -> number[]
-  //  - un array directamente: realByDay -> number[]
-  //  - inexistente: null
+  // Intentamos leer realByDay del store
   let realSeries = null;
   try {
     const maybe = useBudgetStore((s) => s.realByDay);
@@ -39,51 +35,51 @@ export default function ReviewPanel() {
     );
   }
 
-  // Fechas base
   const now = new Date();
-    const demoDay = useBudgetStore(s => s.demoDay);
-    const daysInMonth = useMemo(
+  const demoDay = useBudgetStore((s) => s.demoDay);
+  const daysInMonth = useMemo(
     () => new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
     [now]
-    );
+  );
+  const today = demoDay ?? now.getDate();
 
-    // 👇 si demoDay está definido, úsalo; si no, usa la fecha real
-    const today = demoDay ?? now.getDate();
-
-
-  // Construcción de series
   const { data, projTotal, margin, spentSoFar } = useMemo(() => {
     const idealPerDay = budget / daysInMonth;
 
-    // Serie "real": si viene del store la usamos; si no, la dejamos en 0 hasta hoy
+    // Serie real: zeros (o del store) hasta "today"
     const real = Array.from({ length: daysInMonth }, (_, i) => {
       if (Array.isArray(realSeries) && i < realSeries.length) return Number(realSeries[i] || 0);
       return i + 1 <= today ? 0 : 0;
     });
 
     const spent = real[Math.max(0, today - 1)] ?? 0;
-    const dailySlope = spent / Math.max(1, today); // evita división entre 0
+    const dailySlope = spent / Math.max(1, today);
     const projectionEnd = Math.round(dailySlope * daysInMonth);
     const marginVsBudget = budget - projectionEnd;
 
+    // 🔹 Punto base en 0 para que TODO arranque “desde cero”
+    const baseRow = { day: 0, ideal: 0, real: 0, proj: 0 };
+
     const rows = Array.from({ length: daysInMonth }, (_, i) => {
-    const day = i + 1;
-    return {
+      const day = i + 1;
+      return {
         day,
         ideal: Math.round(idealPerDay * day),
-        // hasta hoy (día 10) dibuja real; después = null (no se pinta)
         real: day <= today ? real[i] : null,
         proj: Math.round(dailySlope * day),
-    };
+      };
     });
 
-
-    return { data: rows, projTotal: projectionEnd, margin: marginVsBudget, spentSoFar: spent };
+    return {
+      data: [baseRow, ...rows],
+      projTotal: projectionEnd,
+      margin: marginVsBudget,
+      spentSoFar: spent,
+    };
   }, [budget, daysInMonth, today, realSeries]);
 
   const isGood = margin >= 0;
 
-  // Estado financiero (semáforo)
   const percentUsed = (spentSoFar / budget) * 100;
   let stateText = "🟢 Buen estado financiero";
   let stateClass = "text-emerald-600";
@@ -109,7 +105,7 @@ export default function ReviewPanel() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-          {/* Métricas / texto */}
+          {/* Métricas */}
           <div className="lg:col-span-5 space-y-4">
             <div className="text-lg">
               <div className="text-slate-600">Presupuesto:</div>
@@ -125,7 +121,7 @@ export default function ReviewPanel() {
               </div>
               <div className="rounded-lg border p-3">
                 <div className="text-slate-500">Hoy</div>
-                <div className="text-xl font-semibold">{today}</div>
+                <div className="text-xl font-semibold">{demoDay ?? new Date().getDate()}</div>
               </div>
               <div className="rounded-lg border p-3">
                 <div className="text-slate-500">Gasto acumulado</div>
@@ -141,7 +137,6 @@ export default function ReviewPanel() {
               </div>
             </div>
 
-            {/* Estado + balance + explicación */}
             <div className="mt-2 text-base">
               <p className={`${stateClass} font-medium`}>
                 {stateText} — Has usado {percentUsed.toFixed(1)}% del presupuesto.
@@ -170,24 +165,40 @@ export default function ReviewPanel() {
           {/* Gráfica */}
           <div className="lg:col-span-7 h-[380px] md:h-[440px]">
             <ResponsiveContainer>
-              <LineChart data={data} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
+              <LineChart
+                data={data}
+                margin={{ top: 10, right: 20, bottom: 10, left: 0 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" tick={{ fontSize: 12 }} interval="preserveStartEnd" />
+
+                {/* 🔹 Eje X numérico de 0 a fin de mes */}
+                <XAxis
+                  type="number"
+                  dataKey="day"
+                  domain={[0, daysInMonth]}
+                  tick={{ fontSize: 12 }}
+                  tickCount={7}
+                />
+
+                {/* 🔹 Eje Y siempre desde 0 */}
                 <YAxis
+                  type="number"
+                  domain={[0, "auto"]}
                   tick={{ fontSize: 12 }}
                   width={70}
                   tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
                 />
+
                 <Tooltip
                   formatter={(v) => `$${Number(v).toLocaleString()}`}
                   labelFormatter={(l) => `Día ${l}`}
                 />
                 <Legend verticalAlign="top" height={36} />
 
-                {/* Banda “permitida” (verde translúcida) */}
+                {/* Banda “permitida” (verde translúcida) — de 0 al presupuesto */}
                 <ReferenceArea
-                  x1={1}
-                  x2={data.length}
+                  x1={0}
+                  x2={daysInMonth}
                   y1={0}
                   y2={budget}
                   fill="#10B98122"
@@ -202,6 +213,7 @@ export default function ReviewPanel() {
                   stroke="#22C55E"
                   strokeWidth={3}
                   dot={false}
+                  isAnimationActive
                 />
                 <Line
                   type="monotone"
@@ -211,17 +223,18 @@ export default function ReviewPanel() {
                   strokeDasharray="6 6"
                   strokeWidth={3}
                   dot={false}
+                  isAnimationActive
                 />
                 <Line
-                    type="monotone"
-                    dataKey="real"
-                    name="Real"
-                    stroke="#3B82F6"
-                    strokeWidth={3}
-                    dot={{ r: 2 }}
-                    connectNulls={false}   // <- importante para que NO una los nulls
+                  type="monotone"
+                  dataKey="real"
+                  name="Real"
+                  stroke="#3B82F6"
+                  strokeWidth={3}
+                  dot={{ r: 2 }}
+                  connectNulls={false} // no une nulls
+                  isAnimationActive
                 />
-
 
                 {/* Línea de presupuesto */}
                 <ReferenceLine
@@ -240,7 +253,7 @@ export default function ReviewPanel() {
             </ResponsiveContainer>
 
             <div className="text-center text-slate-500 text-sm mt-2">
-              La gráfica se actualiza en cuanto el Overview registra gastos.
+              La gráfica parte del 0 y se actualiza en cuanto el Overview registra gastos.
             </div>
           </div>
         </div>
