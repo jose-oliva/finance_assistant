@@ -193,10 +193,7 @@ export default function BudgetBreakdown({
             Add
           </button>
         </form>
-
-        <div className="mt-3 text-center text-xs text-slate-500">
-          {formatter.format(remaining)} remaining out of {formatter.format(initialTotal)}
-        </div>
+        <div className="mt-8 text-center text-xs text-slate-500"></div>
       </div>
     </div>
   );

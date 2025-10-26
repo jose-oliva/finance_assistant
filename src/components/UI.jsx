@@ -20,7 +20,6 @@ import ReviewPanel from './ReviewPanel';
 import SavingsOverview from "./SavingsOverview";
 import EndOfMonthSurvivalPlanOverview from "./EndOfMonthSurvivalPlanOverview";
 
-
 export const UI = ({ hidden, ...props }) => {
   const [loadingR, setLoadingR] = useState(true);
   const [activePlan, setActivePlan] = useState(null);
@@ -296,7 +295,7 @@ export const UI = ({ hidden, ...props }) => {
     }
   }, [reservationCreated]);
 
-  const allowedNames = ["Karla", "Jose", "Santiago", "Gael"];
+  const allowedNames = ["Santiago", "José", "Karla", "Gael", "Jose", "Carla"];
 
   useEffect(() => {
     if (inputValue === "") {
@@ -761,42 +760,64 @@ export const UI = ({ hidden, ...props }) => {
     }
   };
 
+  useEffect(() => {
+    const transcriptLower = transcript.toLowerCase();
+    const foundName = allowedNames.find(name => transcriptLower.includes(name.toLowerCase()));
+
+    if (foundName) {
+      setInputValue(foundName);
+      handleNameSubmit(foundName);
+      input.current.value = `Welcome to ${foundName}`;
+      sendMessage();
+    }
+  }, [transcript]);
+
+  const handleNameSubmit = (name) => {
+    if (allowedNames.includes(name.trim())) {
+      setNameValid(true);
+      setNameError(false);
+    } else {
+      setNameError(true);
+    }
+  };
+
+  useEffect(() => {
+    const transcriptLower = transcript.toLowerCase();
+
+    if (transcriptLower.includes("income")) {
+      const numberMatch = transcript.match(/\d+/);
+      if (numberMatch) {
+        const numberValue = numberMatch[0];
+        input.current.value = `income ${numberValue}`;
+        setBudgetValue(
+          numberValue.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        );
+        sendMessage();
+        handleQuestionClick(currentQuestionIndex + 1);
+      }
+    }
+  }, [transcript]);
+
   return (
     <div className="fixed top-0 left-0 right-0 bottom-0 z-10 flex justify-center w-full h-full">
       {!showAvatarOnly ? (
         <>
           <div className="flex flex-col items-start justify-start w-2/5 h-full">
             <div className="flex items-start justify-start w-full h-1/6">
-              {isButtonVisible && (
-                <div className="w-2/12 h-full">
-                  <button
-                    onClick={() => {
-                      handleButtonClick();
-                      setCameraZoomed(!cameraZoomed);
-                    }}
-                    className="flex w-6/12 h-2/6 items-center justify-center pointer-events-auto bg-blue-500 hover:bg-blue-600 text-white rounded-md mt-2 ml-2"
-                  >
-                    <MdOutlineVideoSettings />
-                  </button>
-                </div>
-              )}
-              {!isButtonVisible && (
-                // <div className={`hidden items-center justify-center w-full h-full`}>
-                <div className={`${isVisible ? "flex" : "hidden"} items-center justify-center w-full h-full`}>
-                  <input
-                    className={` w-7/12 h-2/6 placeholder:text-gray-800 placeholder:italic p-4 rounded-l-md bg-opacity-50 bg-white backdrop-blur-md`}
-                    placeholder="Escribe..."
-                    ref={input}
-                    onKeyDown={(e) => { if (e.key === "Enter") { sendMessage(); } }}
-                  />
-                  <button
-                    onClick={sendMessage}
-                    className={` w-2/12 h-2/6 bg-blue-500 hover:bg-blue-600 text-white font-semibold uppercase rounded-r-md ${loading || message ? "cursor-not-allowed" : ""}`}
-                  >
-                    Enviar
-                  </button>
-                </div>
-              )}
+              <div className={`flex items-center justify-center w-full h-full`}>
+                <input
+                  className={` w-7/12 h-2/6 placeholder:text-gray-800 placeholder:italic p-4 rounded-l-md bg-opacity-50 bg-white backdrop-blur-md`}
+                  placeholder="Type something..."
+                  ref={input}
+                  onKeyDown={(e) => { if (e.key === "Enter") { sendMessage(); } }}
+                />
+                <button
+                  onClick={sendMessage}
+                  className={` w-2/12 h-2/6 bg-blue-500 hover:bg-blue-600 text-white font-semibold uppercase rounded-r-md ${loading || message ? "cursor-not-allowed" : ""}`}
+                >
+                  Send
+                </button>
+              </div>
             </div>
             <div className="flex w-full h-3/6">
             </div>
@@ -852,12 +873,7 @@ export const UI = ({ hidden, ...props }) => {
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    if (allowedNames.includes(inputValue.trim())) {
-                      setNameValid(true);
-                      setNameError(false);
-                    } else {
-                      setNameError(true);
-                    }
+                    handleNameSubmit(inputValue);
                   }}
                   className="flex flex-col items-center justify-center w-3/5"
                 >
@@ -885,6 +901,10 @@ export const UI = ({ hidden, ...props }) => {
                           : buttonState === "valid"
                             ? "green"
                             : "gray",
+                    }}
+                    onClick={() => {
+                      input.current.value = `Welcome ${inputValue}`;
+                      sendMessage();
                     }}
                   >
                     {buttonState === "empty" && (
@@ -980,7 +1000,7 @@ export const UI = ({ hidden, ...props }) => {
                           case "Income":
                             return (
                               <div className="flex flex-col items-center justify-center w-11/12 h-5/6">
-                                <h2 className="text-6xl font-bold text-center mb-4 block">Total budget</h2>
+                                <h2 className="text-6xl font-bold text-center mb-4 block">Total Income</h2>
 
                                 <input
                                   type="text"
@@ -997,11 +1017,17 @@ export const UI = ({ hidden, ...props }) => {
 
                                 <button
                                   type="button"
+                                  onClick={() => {
+                                    input.current.value = `income ${budgetValue}`;
+                                    sendMessage();
+                                    handleQuestionClick(currentQuestionIndex + 1);
+                                  }}
                                   className={`mt-4 flex items-center justify-center w-20 h-12 rounded-full border-2 transition-colors duration-500 ${budgetValue.trim() === ""
                                     ? "border-gray-500 text-gray-500 bg-gray-500 cursor-not-allowed"
                                     : "border-green-500 text-green-500 bg-green-500 hover:bg-green-600 cursor-pointer"
                                     }`}
                                   aria-label="Confirm budget"
+                                  disabled={budgetValue.trim() === ""}
                                 >
                                   <FaCheck className="text-white text-xl" />
                                 </button>
@@ -1047,6 +1073,11 @@ export const UI = ({ hidden, ...props }) => {
                                             }`}
                                           aria-label="Confirm budget"
                                           disabled={!hasValidValue}
+                                          onClick={() => {
+                                            input.current.value = `budgets ${Object.entries(alloc).map(([cat, val]) => `${cat} ${val}`).join(" ")}`;
+                                            sendMessage();
+                                            handleQuestionClick(currentQuestionIndex + 1);
+                                          }}
                                         >
                                           <FaCheck className="text-xl" />
                                         </button>
@@ -1091,7 +1122,7 @@ export const UI = ({ hidden, ...props }) => {
                             );
                           case "Expenses":
                             return (
-                              <div className="flex items-center justify-center w-11/12 h-5/6">
+                              <div className="flex flex-col items-center justify-center w-11/12 h-5/6">
                                 <BudgetBreakdown
                                   category="Home"
                                   initialTotals={alloc}
@@ -1107,6 +1138,17 @@ export const UI = ({ hidden, ...props }) => {
                                     if (data.expensesSeries) setExpensesData(data.expensesSeries);
                                   }}
                                 />
+                                <button
+                                  type="button"
+                                  className="mt-4 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                                  onClick={() => {
+                                    input.current.value = `expenses completed`;
+                                    sendMessage();
+                                    handleQuestionClick(currentQuestionIndex + 1);
+                                  }}
+                                >
+                                  Next
+                                </button>
                               </div>
                             );
                           case "Review":
