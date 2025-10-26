@@ -5,7 +5,6 @@ import { TbLego } from "react-icons/tb";
 import { GiLaptop } from "react-icons/gi";
 import { BsHeadsetVr, BsProjector } from "react-icons/bs";
 import { MdOutlineVideoSettings } from "react-icons/md";
-import ReactCalendar from "react-calendar";
 import "../index.css";
 import ReservationBanner from './ReservationBanner';
 import axiosInstance from "../hooks/axiosInstance";
@@ -14,9 +13,18 @@ import '../index.css';
 import { FaMicrophone } from "react-icons/fa6";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { endOfISOWeek, format, subMinutes } from 'date-fns';
+import { useBudgetStore } from "./BudgetStore";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import BudgetBreakdown from './BudgetBreakdown';
+import ReviewPanel from './ReviewPanel';
+import SavingsOverview from "./SavingsOverview";
+import EndOfMonthSurvivalPlanOverview from "./EndOfMonthSurvivalPlanOverview";
+
 
 export const UI = ({ hidden, ...props }) => {
   const [loadingR, setLoadingR] = useState(true);
+  const [activePlan, setActivePlan] = useState(null);
+  const [activeSurvivalStep, setActiveSurvivalStep] = useState(null);
 
   const initialData = [
     { nombre: 'NOMBRE1', horario: 'HORARIO1' },
@@ -42,11 +50,12 @@ export const UI = ({ hidden, ...props }) => {
   ];
 
   const input = useRef();
-  const [role, setRole] = useState("ALUMNO");
-  const [inputValue, setInputValue] = useState("A0");
+  const [inputValue, setInputValue] = useState("");
+  const [budgetValue, setBudgetValue] = useState("");
   const { chat, message, loading, cameraZoomed, setCameraZoomed } = useReserva();
-  const [matriculaValid, setMatriculaValid] = useState(false);
-  const [matriculaError, setMatriculaError] = useState(false);
+  const [nameValid, setNameValid] = useState(false);
+  const [nameError, setNameError] = useState(false);
+  const [buttonState, setButtonState] = useState("empty");
   const [isButtonVisible, setButtonVisible] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -55,6 +64,7 @@ export const UI = ({ hidden, ...props }) => {
   const [showAvatarOnly, setShowAvatarOnly] = useState(false);
   const [reservationCreated, setReservationCreated] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [expensesData, setExpensesData] = useState([]);
   const [posterImages, setPosterImages] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [error, setError] = useState(null);
@@ -102,6 +112,33 @@ export const UI = ({ hidden, ...props }) => {
     const period = hour < 12 || hour === 24 ? 'AM' : 'PM';
     return `${(hour % 12) || 12}:${minute.toString().padStart(2, '0')} ${period}`;
   };
+
+  const recs = [
+    {
+      id: 1,
+      title: "Reduce gastos variables",
+      description:
+        "Esta semana gastaste ~32% en comida fuera. Si bajas a 20%, ahorras ~$1,200 MXN/mes.",
+      priority: "alta",
+      actionText: "Ver cómo ahorrar",
+    },
+    {
+      id: 2,
+      title: "Fondo de emergencia",
+      description:
+        "Tienes ~1.4 meses de gastos fijos cubiertos. Meta recomendada: 3 meses.",
+      priority: "media",
+      actionText: "Plan de ahorro",
+    },
+    {
+      id: 3,
+      title: "Inversión segura",
+      description:
+        "Te quedan ~$1,800 MXN libres al mes. Puedes ponerlos en un instrumento 7-10% anual.",
+      priority: "baja",
+      actionText: "Ver opciones",
+    },
+  ];
 
   useEffect(() => {
     const timePattern = /(\d{1,2}):?(\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?).*?(\d{1,2}):?(\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?)/i;
@@ -242,7 +279,7 @@ export const UI = ({ hidden, ...props }) => {
         }
       }, 2000);
       //setTimeout(() => {
-        //handleCreateReservation();
+      //handleCreateReservation();
       //}, 12000);
     }
   }, [transcript, selectedLab]);
@@ -259,16 +296,20 @@ export const UI = ({ hidden, ...props }) => {
     }
   }, [reservationCreated]);
 
-  const mandarMatricula = (e) => {
-    e.preventDefault();
-    if (inputValue !== "A00830223" && inputValue !== "A01630223") {
-      setMatriculaError(true);
+  const allowedNames = ["Karla", "Jose", "Santiago", "Gael"];
+
+  useEffect(() => {
+    if (inputValue === "") {
+      setButtonState("empty");
+      setNameError(false);
+    } else if (allowedNames.includes(inputValue.trim())) {
+      setButtonState("valid");
+      setNameError(false);
     } else {
-      setMatriculaError(false);
-      setMatriculaValid(true);
-      setButtonVisible(false);
+      setButtonState("invalid");
+      setNameError(true);
     }
-  };
+  }, [inputValue]);
 
   useEffect(() => {
     const matriculaRegex = /a01630223/i;
@@ -634,16 +675,12 @@ export const UI = ({ hidden, ...props }) => {
     }
   }, [isButtonVisible]);
 
-  const handleDropdownChange = (e) => {
-    setRole(e.target.value);
-    setInputValue(e.target.value === "ALUMNO" ? "A0" : "L0");
-  };
-
   const questions = [
-    "Fecha",
-    "Laboratorios",
-    "Horario",
-    "Equipos",
+    "Income",
+    "Budgets",
+    "Expenses",
+    "Review",
+    "Strategies",
   ];
 
   const handleQuestionClick = (index) => {
@@ -684,6 +721,45 @@ export const UI = ({ hidden, ...props }) => {
   if (hidden) {
     return null;
   }
+
+  const [editingBudget, setEditingBudget] = useState(true);
+  const budgetInputRef = useRef(null);
+
+  const cats = useBudgetStore((s) => s.categories);
+  const budget = useBudgetStore((s) => s.budget);
+  const setBudget = useBudgetStore((s) => s.setBudget);
+
+  const alloc = useBudgetStore((s) => s.allocation);
+  const setAlloc = useBudgetStore((s) => s.setAlloc);
+  const sumAlloc = useBudgetStore((s) => s.sumAlloc());
+
+  const remaining = Math.max(0, Number(budget || 0) - sumAlloc);
+
+  const COLORS = ["#4F46E5", "#22C55E", "#06B6D4"];
+  const pie = cats.map((c, i) => ({
+    name: c,
+    value: Number(alloc[c] || 0),
+    color: COLORS[i % COLORS.length],
+  }));
+
+  const parseDigits = (v) => {
+    const n = Number(String(v).replace(/[^\d]/g, ""));
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const confirmBudget = () => {
+    const n = parseDigits(budgetInputRef.current?.value ?? budget);
+    setBudget(n);
+    setEditingBudget(false);
+  };
+
+  const onBudgetKeyDown = (e) => {
+    if (e.key === "Enter") confirmBudget();
+    if (e.key === "Escape") {
+      setEditingBudget(false);
+      if (budgetInputRef.current) budgetInputRef.current.value = budget;
+    }
+  };
 
   return (
     <div className="fixed top-0 left-0 right-0 bottom-0 z-10 flex justify-center w-full h-full">
@@ -750,7 +826,7 @@ export const UI = ({ hidden, ...props }) => {
               </div>
             </div>
           </div>
-          {!matriculaValid ? (
+          {!nameValid ? (
             <div className="flex flex-col items-center justify-center w-3/5">
               <div
                 style={{
@@ -759,341 +835,318 @@ export const UI = ({ hidden, ...props }) => {
                   alignItems: "center",
                   backgroundColor: "#10069f",
                   width: "66.7%",
-                  height: "15%",
+                  height: "10%",
                   borderTopLeftRadius: "10px",
                   borderTopRightRadius: "10px",
                 }}
               >
-                <img
-                  src={`/logoITESM.png`}
-                  alt="Logo ITESM"
-                  style={{
-                    objectFit: "contain",
-                    width: "50%",
-                    height: "50%",
-                  }}
-                />
+                <h1 className="text-white text-2xl font-semibold text-center">
+                  Hi 👋 I'm Omnia
+                </h1>
               </div>
-              <div className="flex flex-col items-center justify-center text-xl pointer-events-auto w-4/6 h-2/6 mx-auto bg-opacity-50 bg-white backdrop-blur-md rounded-b">
-                <div className="flex items-center justify-between mb-8">
-                  <label className="mr-2">Login para</label>
-                  <select
-                    onChange={handleDropdownChange}
-                    className="border border-black first-line:text-black bg-transparent p-1 rounded-md flex-grow"
+              <div className="flex flex-col items-center justify-center text-xl pointer-events-auto w-4/6 h-2/6 mx-auto bg-opacity-50 bg-white backdrop-blur-md rounded-b p-8">
+                <p className="mb-6 text-center text-gray-800">
+                  I'm here to help you understand and manage your finances better.
+                  Please enter your name to get started.
+                </p>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (allowedNames.includes(inputValue.trim())) {
+                      setNameValid(true);
+                      setNameError(false);
+                    } else {
+                      setNameError(true);
+                    }
+                  }}
+                  className="flex flex-col items-center justify-center w-3/5"
+                >
+                  <input
+                    className="placeholder:text-gray-600 placeholder:italic p-2 w-full rounded-md text-center"
+                    placeholder="Enter your name..."
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    style={{ backgroundColor: "transparent", color: "#000", fontFamily: "'Georgia', serif", fontWeight: "500", fontSize: "2rem" }}
+                  />
+                  <button
+                    type="submit"
+                    ref={buttonRef}
+                    className={`mt-4 flex items-center justify-center w-12 h-12 rounded-full border-2 transition-colors duration-500`}
+                    style={{
+                      borderColor:
+                        buttonState === "empty"
+                          ? "gray"
+                          : buttonState === "valid"
+                            ? "green"
+                            : "gray",
+                      color:
+                        buttonState === "empty"
+                          ? "gray"
+                          : buttonState === "valid"
+                            ? "green"
+                            : "gray",
+                    }}
                   >
-                    <option value="ALUMNO">Alumnos</option>
-                    <option value="DOCENTE">Docentes</option>
-                  </select>
-                </div>
-                <div className="w-2/5 flex flex-col items-center">
-                  <form
-                    onSubmit={mandarMatricula}
-                    className="flex items-center justify-between"
-                  >
-                    <input
-                      className="placeholder:text-gray-800 placeholder:italic p-4 flex w-full rounded-l-md border-t border-l border-b border-black"
-                      value={inputValue}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                        }
-                      }}
-                      onChange={(e) => {
-                        if (
-                          role === "ALUMNO" &&
-                          !e.target.value.startsWith("A0")
-                        ) {
-                          setInputValue("A0" + e.target.value.slice(2));
-                        } else if (
-                          role === "DOCENTE" &&
-                          !e.target.value.startsWith("L0")
-                        ) {
-                          setInputValue("L0" + e.target.value.slice(2));
-                        } else {
-                          setInputValue(e.target.value);
-                        }
-                      }}
-                    />
-                    <button ref={buttonRef} className="bg-blue-500 hover:bg-blue-600 text-white w-3/12 h-full flex items-center justify-center rounded-r-md border-t border-r border-b border-black">
-                      <FaCheck />
-                    </button>
-                  </form>
-                  {matriculaError && (
-                    <p className="text-red-500">No existe esa matricula</p>
-                  )}
-                </div>
+                    {buttonState === "empty" && (
+                      <span className="text-3xl font-bold animate-fadeIn">-</span>
+                    )}
+                    {buttonState === "valid" && (
+                      <FaCheck className="text-3xl animate-fadeIn" />
+                    )}
+                    {buttonState === "invalid" && (
+                      <div className="flex justify-center items-center">
+                        <span className="dot dot1"></span>
+                        <span className="dot dot2"></span>
+                        <span className="dot dot3"></span>
+                      </div>
+                    )}
+                  </button>
+                </form>
+                {nameError && (
+                  <p className="text-gray-500 mt-2 text-xs animate-fadeIn">
+                    Please enter a valid name
+                  </p>
+                )}
               </div>
             </div>
           ) : (
             <div className="flex flex-row items-center justify-center w-3/5 h-full">
               <div className="w-3/12 h-5/6 flex flex-col justify-center items-center bg-[#10069f] relative rounded-l-md">
                 {selectedDate && (
-                  <div className="h-full w-full flex flex-col items-center text-white">
-                      <div className="h-3/5 w-11/12 flex flex-col items-center justify-center overflow-hidden">
-                        <span className="text-[2vw] uppercase overflow-hidden">
-                          {selectedDate.toLocaleString("es", { weekday: "long" })}
-                        </span>
-                        <span className="text-[8vw] overflow-hidden">{selectedDate.getDate()}</span>
-                        <span className="text-[2vw] uppercase overflow-hidden">
-                          {selectedDate.toLocaleString("es", { month: "long" })}
-                        </span>
-                      </div>
-                    <div className="h-2/6 w-10/12">
-                      <span className="flex h-1/5 items-center text-base underline uppercase font-bold text-[1vw] overflow-hidden">
-                        Especificaciones :
-                      </span>
-                      <div className="flex flex-col justify-start h-3/5">
-                        <ul className="list-disc list-inside">
-                          <li className="text-[1.1vw] overflow-hidden">{cardNames[selectedCard] ? cardNames[selectedCard] : "Sin sala"}</li>
-                          <li className="text-[1.1vw] overflow-hidden">
-                            {selectedTimes.length === 2 ?
-                              `${convertTo12Hour(selectedTimes[0])} - ${convertTo12Hour(selectedTimes[1])}`
-                              : 'Sin Horario'}
-                          </li>
-                          {Object.values(counts).some(count => count > 0) && (
-                            <>
-                              <li className="list-disc text-[1vw] overflow-hidden">Equipo seleccionado:</li>
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                                {Object.entries(counts).map(([team, count]) =>
-                                  count > 0 ? (
-                                    <div key={team} style={{ display: 'flex', alignItems: 'center', justifyContent: 'start', width: '100%' }}>
-                                      {teamIcons[team]} <span style={{ marginLeft: '5px' }}>x {count}</span>
-                                    </div>
-                                  ) : null
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </ul>
+                  <div className="flex justify-center items-center h-full w-full flex-col text-white mt-5">
+                    <div className="text-center text-3xl font-semibold mb-4">
+                      ${budgetValue ? budgetValue : "0"}
+                    </div>
+                    <div className="h-2/5 w-11/12 flex flex-col items-center justify-center">
+                      <ResponsiveContainer width="100%" height="75%">
+                        <PieChart>
+                          <Pie
+                            data={pie}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={50}
+                            outerRadius={90}
+                            isAnimationActive
+                          >
+                            {pie.map((d) => (
+                              <Cell key={d.name} fill={d.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(v) => `$${Number(v).toLocaleString()}`} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="mt-4 flex flex-wrap justify-center gap-4">
+                        {pie.map((d) => (
+                          <div key={d.name} className="flex items-center gap-2">
+                            <span
+                              className="w-6 h-6 rounded"
+                              style={{ backgroundColor: d.color }}
+                              aria-label={`${d.name} color`}
+                              title={d.name}
+                            />
+                            <span className="text-base">{d.name}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                      <button
-                        className="bg-blue-500 hover:bg-blue-600 text-white w-11/12 flex items-center justify-center text-[1.5vw] uppercase rounded-md overflow-hidden"
-                        onClick={handleCreateReservation}
-                      >
-                        reservar
-                      </button>
+                    <div className="h-2/6 w-10/12 mt-6">
+                      <span className="flex h-1/5 items-center text-base underline uppercase font-bold text-[1vw] overflow-hidden">
+                        Budgets:
+                      </span>
+                      <ul className="mt-1 list-disc list-inside text-base text-white w-full">
+                        {Object.entries(alloc).map(([category, amount]) =>
+                          amount !== "" && amount !== null && amount !== undefined ? (
+                            <li key={category}>
+                              {category}: ${Number(amount).toLocaleString()}
+                            </li>
+                          ) : null
+                        )}
+                      </ul>
+                    </div>
                   </div>
                 )}
               </div>
               <div className="border border-blue-800 flex flex-col items-center justify-center w-8/12 h-5/6 bg-opacity-50 bg-white backdrop-blur-md rounded-r-md">
-                  {reservationCreated ? (
-                    <div className="w-full h-full flex flex-col justify-center items-center">
-                      <FaCheckCircle className="checkmark-animation" size={100} color="blue" />
-                      <h1 className="text-[2vw] overflow-hidden text-animation">RESERVACIÓN CREADA CON ÉXITO</h1>
-                    </div>
-                  ) : (
+                {reservationCreated ? (
+                  <div className="w-full h-full flex flex-col justify-center items-center">
+                    <FaCheckCircle className="checkmark-animation" size={100} color="blue" />
+                    <h1 className="text-[2vw] overflow-hidden text-animation">RESERVACIÓN CREADA CON ÉXITO</h1>
+                  </div>
+                ) : (
                   <>
                     <div className="w-full h-full flex justify-center items-center">
                       {(() => {
                         switch (questions[currentQuestionIndex]) {
-                          case "Fecha":
+                          case "Income":
                             return (
-                              <ReactCalendar
-                                className="react-calendar"
-                                locale="es-ES"
-                                minDate={new Date()}
-                                onChange={(date) => {
-                                  setSelectedDate(date);
-                                  setTimeout(() => {
+                              <div className="flex flex-col items-center justify-center w-11/12 h-5/6">
+                                <h2 className="text-6xl font-bold text-center mb-4 block">Total budget</h2>
+
+                                <input
+                                  type="text"
+                                  className="placeholder:text-gray-600 placeholder:italic p-2 w-2/3 rounded-md text-center mb-4 block"
+                                  placeholder="Enter your budget..."
+                                  value={budgetValue ? `$${budgetValue}` : ""}
+                                  onChange={(e) => {
+                                    const onlyNums = e.target.value.replace(/\D/g, "");
+                                    const formatted = onlyNums.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                                    setBudgetValue(formatted);
+                                  }}
+                                  style={{ backgroundColor: "transparent", color: "#000", fontWeight: "500", fontSize: "2rem" }}
+                                />
+
+                                <button
+                                  type="button"
+                                  className={`mt-4 flex items-center justify-center w-20 h-12 rounded-full border-2 transition-colors duration-500 ${budgetValue.trim() === ""
+                                    ? "border-gray-500 text-gray-500 bg-gray-500 cursor-not-allowed"
+                                    : "border-green-500 text-green-500 bg-green-500 hover:bg-green-600 cursor-pointer"
+                                    }`}
+                                  aria-label="Confirm budget"
+                                >
+                                  <FaCheck className="text-white text-xl" />
+                                </button>
+                              </div>
+                            );
+                          case "Budgets":
+                            const cleanNumberString = (str) => str.replace(/[^\d]/g, "");
+                            return (
+                              <div className="flex flex-col items-center justify-center w-11/12 h-5/6">
+                                <h2 className="text-5xl font-bold text-center mb-4">Budget by category</h2>
+                                <div className="flex w-full h-full items-start">
+                                  <div className="flex flex-col items-center justify-center w-1/2 h-full">
+                                    {cats.map((c) => (
+                                      <div key={c} className="flex flex-col items-center mb-4">
+                                        <span className="w-full text-center text-lg">{c}</span>
+                                        <input
+                                          className="w-3/4 h-12 rounded-md text-center text-lg outline-none focus:ring-4 focus:ring-blue-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                          type="text"
+                                          inputMode="numeric"
+                                          value={
+                                            alloc[c] !== undefined && alloc[c] !== null && alloc[c] !== ""
+                                              ? `$${Number(alloc[c]).toLocaleString()}`
+                                              : ""
+                                          }
+                                          onChange={(e) => {
+                                            const rawValue = cleanNumberString(e.target.value);
+                                            setAlloc(c, rawValue === "" ? "" : Number(rawValue));
+                                          }}
+                                        />
+                                      </div>
+                                    ))}
+
+                                    {(() => {
+                                      const hasValidValue = Object.values(alloc).some(
+                                        (val) => typeof val === "number" && val > 0
+                                      );
+                                      return (
+                                        <button
+                                          type="button"
+                                          className={`mt-4 flex items-center justify-center w-20 h-12 rounded-full border-2 transition-colors duration-500 ${hasValidValue
+                                            ? "border-green-500 text-white bg-green-500 hover:bg-green-600 cursor-pointer"
+                                            : "border-gray-500 text-white bg-gray-500 cursor-not-allowed"
+                                            }`}
+                                          aria-label="Confirm budget"
+                                          disabled={!hasValidValue}
+                                        >
+                                          <FaCheck className="text-xl" />
+                                        </button>
+                                      );
+                                    })()}
+                                  </div>
+
+                                  <div className="w-1/2 h-full">
+                                    <ResponsiveContainer width="100%" height="70%">
+                                      <PieChart>
+                                        <Pie
+                                          data={pie}
+                                          dataKey="value"
+                                          nameKey="name"
+                                          innerRadius={80}
+                                          outerRadius={120}
+                                          isAnimationActive
+                                        >
+                                          {pie.map((d) => (
+                                            <Cell key={d.name} fill={d.color} />
+                                          ))}
+                                        </Pie>
+                                        <Tooltip formatter={(v) => `$${Number(v).toLocaleString()}`} />
+                                      </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="mt-4 flex flex-wrap justify-center gap-4">
+                                      {pie.map((d) => (
+                                        <div key={d.name} className="flex items-center gap-2">
+                                          <span
+                                            className="w-6 h-6 rounded"
+                                            style={{ backgroundColor: d.color }}
+                                            aria-label={`${d.name} color`}
+                                            title={d.name}
+                                          />
+                                          <span className="text-lg">{d.name}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          case "Expenses":
+                            return (
+                              <div className="flex items-center justify-center w-11/12 h-5/6">
+                                <BudgetBreakdown
+                                  category="Home"
+                                  initialTotals={alloc}
+                                  currency="USD"
+                                  budgetsByCategory={alloc}
+                                  onNextCategory={() => {
                                     handleQuestionClick(currentQuestionIndex + 1);
-                                  }, 9000);
-                                  const formattedDate = date.toLocaleDateString('en-GB');
-                                  input.current.value = formattedDate;
-                                  sendMessage();
-                                }}
-                                value={selectedDate}
-                                formatShortWeekday={(locale, date) => {
-                                  let weekday = date.toLocaleString(locale, {
-                                    weekday: "long",
-                                  });
-                                  weekday =
-                                    weekday.charAt(0).toUpperCase() +
-                                    weekday.slice(1);
-                                  return weekday;
-                                }}
-                                formatMonthYear={(locale, date) => {
-                                  let monthYear = date.toLocaleString(locale, {
-                                    month: "long",
-                                    year: "numeric",
-                                  });
-                                  monthYear =
-                                    monthYear.charAt(0).toUpperCase() +
-                                    monthYear.slice(1);
-                                  return monthYear;
-                                }}
+                                  }}
+                                  onComplete={() => {
+                                    console.log("Expenses complete");
+                                  }}
+                                  onExpensesChange={(data) => {
+                                    if (data.expensesSeries) setExpensesData(data.expensesSeries);
+                                  }}
+                                />
+                              </div>
+                            );
+                          case "Review":
+                            return (
+                              <ReviewPanel
+                                income={budgetValue ? Number(budgetValue.replace(/,/g, "")) : 0}
+                                budgets={alloc}
+                                expenses={expensesData}
                               />
                             );
-                          case "Laboratorios":
+                          case "Strategies":
                             return (
-                              <div className="w-11/12 h-5/6 grid grid-cols-3 gap-4">
-                                {cardNames.map((name, index) => (
-                                  <div
-                                    key={index}
-                                    className={`relative bg-cover bg-center text-center flex w-auto h-auto items-center justify-center rounded-md transform transition duration-500 ease-in-out ${selectedCard === index ? 'scale-110 border-4 border-fuchsia-500' : ''}`}
-                                    style={roomImages[name] ? { backgroundImage: `url(${roomImages[name]})` } : {}}
-                                    onClick={() => {
-                                      setSelectedCard(index);
-                                      if (roomIds.hasOwnProperty(name)) {
-                                        setSelectedRoomId(roomIds[name]);
-                                      } else {
-                                        // console.error(`No room ID found for ${name}`);
-                                      }
-                                      setSelectedLab(name);
-                                      setCounts({
-                                        'LEGO': 0,
-                                        'VR Headset': 0,
-                                        'PC': 0,
-                                        'Projector': 0,
-                                        'Whiteboard': 0
-                                      });
-                                    }}
-                                  >
-                                    <div className="absolute bottom-0 w-full flex flex-col items-center justify-center bg-blue-600 text-white rounded-b">
-                                      <div className="text-white">Laboratorio {index + 1}:</div>
-                                      <div>{name}</div>
-                                    </div>
-                                    {!roomImages[name] && <div className="absolute inset-0 flex items-center justify-center text-lg text-gray-500">Imagen no disponible</div>}
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          case "Horario":
-                            return (
-                              <div className="grid grid-cols-6 grid-rows-8 gap-2 w-11/12 h-5/6">
-                                {Array.from({ length: 48 }, (_, i) => {
-                                  const hour = Math.floor(i / 2);
-                                  const minute = i % 2 === 0 ? '00' : '30';
-                                  const period = hour < 12 || hour === 24 ? 'AM' : 'PM';
-                                  const time = `${hour === 0 || hour === 12 ? 12 : hour % 12}:${minute} ${period}`;
-                                  const time24 = `${hour.toString().padStart(2, '0')}:${minute}`;
-                                  const timeMinutes = timeToMinutes(time24);
-                                  const [startMinutes, endMinutes] = selectedTimes.map(timeToMinutes);
-                                  const isSelected = timeMinutes >= startMinutes && timeMinutes <= endMinutes;
-                                  return (
-                                    <button
-                                      key={i + 1}
-                                      className={`m-1 border border-black rounded-xl shadow-lg text-sm whitespace-nowrap overflow-hidden text-black hover:bg-blue-500 hover:text-white transition-all duration-200 ease-in-out transform hover:scale-105 ${isSelected ? 'bg-blue-500 text-white animate-pulse border-2 border-fuchsia-500' : ''}`}
-                                      onClick={() => {
-                                        if (selectedButtons.length === 1) {
-                                          const selectedHour = Math.floor((selectedButtons[0] - 1) / 2);
-                                          const selectedMinute = (selectedButtons[0] - 1) % 2 === 0 ? '00' : '30';
-                                          const selectedTime24 = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute}`;
-                                          input.current.value = `${selectedTime24} - ${time24}`;
-                                          setSelectedTimes([selectedTime24, time24]);
-                                          sendMessage();
-                                          setTimeout(() => {
-                                            handleQuestionClick(currentQuestionIndex + 1);
-                                          }, 11000);
-                                        } else {
-                                          setSelectedTimes([]);
-                                        }
-                                        selectbotones(i + 1);
-                                      }}
-                                    >
-                                      {time}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            );
-                          case "Equipos":
-                            return (
-                              <div className="w-full h-full flex flex-col items-center justify-center">
-                                <div className="flex justify-center items-center w-full h-2/6">
-                                  <div className="flex justify-center items-center h-full w-4/12">
-                                    <div
-                                      className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'LEGO' ? 'border-fuchsia-500 border-4' : (!availableEquipments.includes('LEGO') ? 'border-red-500 border-4' : 'border-blue-500 border-4')}`}
-                                      onClick={() => availableEquipments.includes('LEGO') && setSelected('LEGO')}
-                                      style={equipmentImages['Lego'] ? { backgroundImage: `url(${equipmentImages['Lego']})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}
-                                    >
-                                      {!equipmentImages['Lego'] && <TbLego style={{ fontSize: '5em', color: selected === 'LEGO' ? 'white' : 'black' }} />}
-                                      <div style={{ marginTop: 'auto', backgroundColor: selected === 'LEGO' ? 'fuchsia' : (!availableEquipments.includes('LEGO') ? 'red' : 'blue'), width: '100%', padding: '2% 0', display: 'flex', justifyContent: 'center', borderBottomLeftRadius: '0.5rem', borderBottomRightRadius: '0.5rem' }}>
-                                        <span style={{ color: 'white' }}>Lego</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex justify-around items-center w-full h-2/6">
-                                  <div className="flex justify-center items-center h-full w-4/12">
-                                    <div
-                                      className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'VR Headset' ? 'border-fuchsia-500 border-4' : (!labToEquipments[selectedLab]?.includes('VR Headset') ? 'border-red-500 border-4' : 'border-blue-500 border-4')}`}
-                                      onClick={() => labToEquipments[selectedLab]?.includes('VR Headset') && toggleSelectNew('VR Headset')}
-                                      style={equipmentImages['VR Headset'] ? { backgroundImage: `url(${equipmentImages['VR Headset']})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}
-                                    >
-                                      {!equipmentImages['VR Headset'] && <BsHeadsetVr style={{ fontSize: '5em', color: selected === 'VR Headset' ? 'white' : 'black' }} />}
-                                      <div style={{ marginTop: 'auto', backgroundColor: selected === 'VR Headset' ? 'fuchsia' : (!labToEquipments[selectedLab]?.includes('VR Headset') ? 'red' : 'blue'), width: '100%', padding: '2% 0', display: 'flex', justifyContent: 'center', borderBottomLeftRadius: '0.5rem', borderBottomRightRadius: '0.5rem' }}>
-                                        <span style={{ color: 'white' }}>VR Headset</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="h-full w-4/12 flex flex-col items-center justify-center p-4 rounded-lg">
-                                    <p className="text-2xl font-bold mb-4">{counts[selected] || 0}</p>
-                                    <div>
-                                      <button className="bg-green-500 text-white text-2xl px-4 py-2 rounded-xl mr-2" onClick={incrementCount}>+</button>
-                                      <button className="bg-red-500 text-white text-2xl px-4 py-2 rounded-xl" onClick={decrementCount}>-</button>
-                                    </div>
-                                  </div>
-                                  <div className="flex justify-center items-center h-full w-4/12">
-                                    <div
-                                      className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'PC' ? 'border-fuchsia-500 border-4' : (!labToEquipments[selectedLab]?.includes('PC') ? 'border-red-500 border-4' : 'border-blue-500 border-4')}`}
-                                      onClick={() => labToEquipments[selectedLab]?.includes('PC') && toggleSelectNew('PC')}
-                                      style={equipmentImages['PC'] ? { backgroundImage: `url(${equipmentImages['PC']})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}
-                                    >
-                                      {!equipmentImages['PC'] && <GiLaptop style={{ fontSize: '5em', color: selected === 'PC' ? 'white' : 'black' }} />}
-                                      <div style={{ marginTop: 'auto', backgroundColor: selected === 'PC' ? 'fuchsia' : (!labToEquipments[selectedLab]?.includes('PC') ? 'red' : 'blue'), width: '100%', padding: '2% 0', display: 'flex', justifyContent: 'center', borderBottomLeftRadius: '0.5rem', borderBottomRightRadius: '0.5rem' }}>
-                                        <span style={{ color: 'white' }}>PC</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex justify-stretch items-center w-full h-2/6">
-                                  <div className="flex justify-end items-center h-full w-5/12">
-                                    <div
-                                      className={`flex flex-col justify-center items-center h-4/6 w-6/12 rounded-xl ${selected === 'Projector' ? 'border-fuchsia-500 border-4' : (!labToEquipments[selectedLab]?.includes('Projector') ? 'border-red-500 border-4' : 'border-blue-500 border-4')}`}
-                                      onClick={() => labToEquipments[selectedLab]?.includes('Projector') && toggleSelectNew('Projector')}
-                                      style={equipmentImages['Projector'] ? { backgroundImage: `url(${equipmentImages['Projector']})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}
-                                    >
-                                      {!equipmentImages['Projector'] && <BsProjector style={{ fontSize: '5em', color: selected === 'Projector' ? 'white' : 'black' }} />}
-                                      <div style={{ marginTop: 'auto', backgroundColor: selected === 'Projector' ? 'fuchsia' : (!labToEquipments[selectedLab]?.includes('Projector') ? 'red' : 'blue'), width: '100%', padding: '2% 0', display: 'flex', justifyContent: 'center', borderBottomLeftRadius: '0.5rem', borderBottomRightRadius: '0.5rem' }}>
-                                        <span style={{ color: 'white' }}>Projector</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="h-full w-2/12"></div>
-                                  <div className="flex justify-start items-center h-full w-5/12">
-                                    <div
-                                      className={`flex flex-col justify-center items-center h-4/6 w-6/12 rounded-xl ${selected === 'Whiteboard' ? 'border-fuchsia-500 border-4' : (!labToEquipments[selectedLab]?.includes('Whiteboard') ? 'border-red-500 border-4' : 'border-blue-500 border-4')}`}
-                                      onClick={() => labToEquipments[selectedLab]?.includes('Whiteboard') && toggleSelectNew('Whiteboard')}
-                                      style={equipmentImages['Whiteboard'] ? { backgroundImage: `url(${equipmentImages['Whiteboard']})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}
-                                    >
-                                      {!equipmentImages['Whiteboard'] && <FaChalkboardTeacher style={{ fontSize: '5em', color: selected === 'Whiteboard' ? 'white' : 'black' }} />}
-                                      <div style={{ marginTop: 'auto', backgroundColor: selected === 'Whiteboard' ? 'fuchsia' : (!labToEquipments[selectedLab]?.includes('Whiteboard') ? 'red' : 'blue'), width: '100%', padding: '2% 0', display: 'flex', justifyContent: 'center', borderBottomLeftRadius: '0.5rem', borderBottomRightRadius: '0.5rem' }}>
-                                        <span style={{ color: 'white' }}>Whiteboard</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
+                              <SavingsOverview
+                                monthlyExpenses={budgetValue ? Number(budgetValue.replace(/,/g, "")) : 0}
+                                emergencyMonthlyDeposit={budgetValue ? Number(budgetValue.replace(/,/g, "")) / 6 : 0}
+                                shortTermGoalCost={budgetValue ? Number(budgetValue.replace(/,/g, "")) / 3 : 0}
+                                shortTermDepositA={budgetValue ? Number(budgetValue.replace(/,/g, "")) / 5 : 0}
+                                fastDeposit={budgetValue ? Number(budgetValue.replace(/,/g, "")) / 5 : 0}
+                                monthlyLongTerm={budgetValue ? Number(budgetValue.replace(/,/g, "")) / 12 : 0}
+                              />
                             );
                         }
                       })()}
                     </div>
-                        <div className="w-full h-1/6 flex items-center justify-center space-x-4">
-                          {questions.map((question, index) => (
-                            <React.Fragment key={index}>
-                              {index !== 0 && <span className="text-gray-500">•</span>}
-                              <button
-                                onMouseEnter={() => handleMouseEnter(index)}
-                                onMouseLeave={handleMouseLeave}
-                                onClick={() => handleQuestionClick(index)}
-                                className={`relative text-[1.1vw] h-4/6 w-auto flex items-center justify-center ${currentQuestionIndex === index ? "text-blue-500" : "text-gray-500"} ${hoverIndex === index ? "hovered" : ""}`}
-                              >
-                                {question}
-                                {currentQuestionIndex === index && <span className="absolute top-0 left-1/2 transform -translate-x-1/2 -mt-2 active-arrow">▼</span>}
-                              </button>
-                            </React.Fragment>
-                          ))}
-                        </div>
+                    <div className="w-full h-1/6 flex items-center justify-center space-x-4">
+                      {questions.map((question, index) => (
+                        <React.Fragment key={index}>
+                          {index !== 0 && <span className="text-gray-500">•</span>}
+                          <button
+                            onMouseEnter={() => handleMouseEnter(index)}
+                            onMouseLeave={handleMouseLeave}
+                            onClick={() => handleQuestionClick(index)}
+                            className={`relative text-[1.1vw] h-4/6 w-auto flex items-center justify-center ${currentQuestionIndex === index ? "text-blue-500" : "text-gray-500"} ${hoverIndex === index ? "hovered" : ""}`}
+                          >
+                            {question}
+                            {currentQuestionIndex === index && <span className="absolute top-0 left-1/2 transform -translate-x-1/2 -mt-2 active-arrow">▼</span>}
+                          </button>
+                        </React.Fragment>
+                      ))}
+                    </div>
                   </>
                 )}
               </div>
