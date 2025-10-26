@@ -5,8 +5,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/reservations/': {
-        target: 'https://dream-lab-backend.azurewebsites.net',
+      '/omnia/': {
+        target: 'https://omnia-backend.azurewebsites.net',
         changeOrigin: true,
         secure: false,
       },
