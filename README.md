@@ -1,7 +1,7 @@
 # Youtube Videos
 
 ```bash
-[yarn](https://youtu.be/WNzT-dbYEe4)
+https://youtu.be/WNzT-dbYEe4
 ```
 
 # Omnia — Finance Assistant
