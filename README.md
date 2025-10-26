@@ -1,3 +1,9 @@
+# Youtube Videos
+
+```bash
+[yarn](https://youtu.be/WNzT-dbYEe4)
+```
+
 # Omnia — Finance Assistant
 
 A lightweight, client-side finance assistant prototype built with React, Vite, and Tailwind CSS. Created for HackMTY 2025, this app provides visual budgeting tools, savings and emergency fund planning, and short- and long-term financial overviews.
