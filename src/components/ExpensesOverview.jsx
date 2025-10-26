@@ -127,10 +127,10 @@ export default function ExpensesOverview({ budgetData = { Hogar: { budget: 3400,
                 whileHover={{ scale: 1.1 }}
                 className="flex items-center justify-center"
               >
-                <div className="text-center text-white font-bold px-2">
-                  <div className="text-sm">{category}</div>
-                  <div className="text-xs">{formatter.format(data.spent)}/{formatter.format(data.budget)}</div>
-                  <div className="text-xs">{bubbleProps.percentage.toFixed(0)}%</div>
+                <div className="text-center text-white px-2">
+                  <div className="text-sm font-bold">{category}</div>
+                  <div className="text-[10px]">{formatter.format(data.spent)}/{formatter.format(data.budget)}</div>
+                  <div className="text-[10px]">{bubbleProps.percentage.toFixed(0)}%</div>
                 </div>
               </motion.div>
             );
