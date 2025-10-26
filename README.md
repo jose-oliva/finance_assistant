@@ -26,7 +26,7 @@ Exact dependencies are in `package.json`.
 1. Install dependencies
 
 ```bash
-yarn install
+yarn
 ```
 
 2. Start development server (hot reloading)
