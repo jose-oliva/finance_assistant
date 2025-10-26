@@ -1,8 +1,6 @@
 # Youtube Videos
 
-```bash
-https://youtu.be/WNzT-dbYEe4
-```
+- [Ver demo en YouTube — Omnia walkthrough](https://youtu.be/WNzT-dbYEe4)
 
 # Omnia — Finance Assistant
 
