@@ -10,7 +10,6 @@ export default function EndOfMonthSurvivalPlanOverview({
   variableMoneyLeft = 3200,   
   currentBurnRate = 1600,     
 }) {
-  // límite diario realista para no endeudarte más
   const dailyCap = daysLeft > 0 ? variableMoneyLeft / daysLeft : 0;
   const weeklyCash = dailyCap * 7;
 
@@ -24,25 +23,25 @@ export default function EndOfMonthSurvivalPlanOverview({
     [spentPctTarget]
   );
 
-  // animación barra
+  // animated bar widths
   const [spentPct, setSpentPct] = useState(0);
   const [leftPct, setLeftPct] = useState(0);
 
-  // animación steps
+  // animated reveal for action cards
   const [stepVisible, setStepVisible] = useState([false, false, false]);
 
   useEffect(() => {
-    // animar barra gastada
+    // animate the "already spent" chunk first
     const t1 = setTimeout(() => {
       setSpentPct(spentPctTarget);
     }, 200);
 
-    // animar barra restante
+    // then animate the "left to survive" chunk
     const t2 = setTimeout(() => {
       setLeftPct(leftPctTarget);
     }, 600);
 
-    // mostrar pasos uno a uno
+    // stagger in the 3 survival steps
     const t3 = setTimeout(() => {
       setStepVisible([true, false, false]);
     }, 800);
@@ -66,125 +65,129 @@ export default function EndOfMonthSurvivalPlanOverview({
 
   return (
     <section className="w-full max-w-xl mx-auto rounded-2xl border border-rose-300 bg-white/80 backdrop-blur-sm shadow-md p-6 space-y-6">
+      {/* HEADER */}
       <header className="flex items-start justify-between">
         <div className="space-y-1">
           
 
           <h2 className="text-lg font-semibold text-slate-900 leading-tight flex items-center gap-2">
             <span role="img" aria-label="siren">🚨</span>
-            Supervivencia de fin de mes
+            End-of-Month Survival
           </h2>
 
+         
         </div>
       </header>
 
-      {/* SNAPSHOT RÁPIDO */}
+      {/* SNAPSHOT */}
       <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
         <div className="grid grid-cols-3 gap-4 text-center">
-          {/* Liquidez actual */}
+          {/* Cash left */}
           <div className="flex flex-col">
             <div className="text-[11px] uppercase text-slate-500 font-medium">
-              Te queda líquido
+              Cash left
             </div>
             <div className="text-base font-semibold text-slate-900 leading-tight">
               ${variableMoneyLeft.toLocaleString("es-MX")}
             </div>
             <div className="text-[11px] text-slate-500 leading-tight">
-              ya SIN renta / servicios
+              after rent / bills set aside
             </div>
           </div>
 
-          {/* Días restantes */}
+          {/* Days left */}
           <div className="flex flex-col">
             <div className="text-[11px] uppercase text-slate-500 font-medium">
-              Días restantes
+              Days left
             </div>
             <div className="text-base font-semibold text-slate-900 leading-tight">
-              {daysLeft} días
+              {daysLeft} days
             </div>
             <div className="text-[11px] text-slate-500 leading-tight">
-              hasta cobrar
+              until next income
             </div>
           </div>
 
-          {/* Tope diario sano */}
+          {/* Safe daily cap */}
           <div className="flex flex-col">
             <div className="text-[11px] uppercase text-slate-500 font-medium">
-              Tope diario sano
+              Safe daily max
             </div>
             <div className="text-lg font-bold text-rose-700 leading-tight">
-              ${dailyCap.toFixed(0)}/día
+              ${dailyCap.toFixed(0)}/day
             </div>
             <div className="text-[11px] text-rose-600 font-medium leading-tight">
-              No pases esto
+              Do not go over this
             </div>
           </div>
         </div>
 
-        {/* BLOQUE VISUAL: "Te comiste X en Y días" */}
+        {/* SPENDING SPEED + PROGRESS BAR */}
         <div className="mt-5 rounded-lg border border-rose-200 bg-white/70 p-4 text-[12px] leading-snug">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
             <div className="flex flex-col">
               <div className="text-[11px] uppercase font-semibold text-rose-600 flex items-center gap-1">
-                <span role="img" aria-label="fuego">🔥</span>
-                <span>Velocidad de gasto</span>
+                <span role="img" aria-label="fire">🔥</span>
+                <span>Spending speed</span>
               </div>
 
               <div className="text-slate-900 font-semibold text-base leading-tight">
-                Te comiste ${spentSoFar.toLocaleString("es-MX")} en {daysElapsed} días.
+                You burned through ${spentSoFar.toLocaleString("es-MX")} in{" "}
+                {daysElapsed} days.
               </div>
 
               <div className="text-[11px] text-slate-600 leading-snug">
-                Te quedan ${variableMoneyLeft.toLocaleString("es-MX")} para los
-                próximos {daysLeft} días.
+                You only have ${variableMoneyLeft.toLocaleString("es-MX")} left
+                to survive the next {daysLeft} days.
               </div>
 
               <div className="text-[11px] text-rose-600 font-medium leading-snug mt-1">
-                Estás quemando ~${currentBurnRate.toLocaleString("es-MX")}/día.
-                Tope sano sería ~${dailyCap.toFixed(0)}/día.
+                Current burn rate: ~$
+                {currentBurnRate.toLocaleString("es-MX")}/day.
+                Safe target: ~${dailyCap.toFixed(0)}/day.
               </div>
             </div>
 
             <div className="text-right sm:text-right">
               <div className="inline-flex items-center gap-1 rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700 leading-none">
-                <span role="img" aria-label="alerta">🚨</span>
-                <span>Modo emergencia</span>
+                <span role="img" aria-label="alert">🚨</span>
+                <span>Emergency mode</span>
               </div>
             </div>
           </div>
 
-          {/* Barra apilada animada */}
+          {/* animated bar */}
           <div className="w-full">
             <div className="w-full h-4 rounded bg-slate-200 overflow-hidden flex">
-              {/* tramo gastado */}
+              {/* spent chunk */}
               <div
                 className="h-full bg-gradient-to-r from-rose-600 to-rose-400 transition-all duration-500 ease-out"
                 style={{ width: `${spentPct}%` }}
-                title={`${spentPct.toFixed(0)}% ya gastado`}
+                title={`${spentPct.toFixed(0)}% already gone`}
               />
-              {/* tramo que queda */}
+              {/* remaining chunk */}
               <div
                 className="h-full bg-slate-300 transition-all duration-500 ease-out"
                 style={{ width: `${leftPct}%` }}
-                title={`${leftPct.toFixed(0)}% que queda`}
+                title={`${leftPct.toFixed(0)}% left to survive`}
               />
             </div>
 
-            {/* etiquetas bajo la barra */}
+            {/* labels below bar */}
             <div className="flex flex-col sm:flex-row sm:justify-between mt-2 text-[11px] leading-snug font-medium">
               <div className="text-rose-600">
-                ${spentSoFar.toLocaleString("es-MX")} ya se fue
+                ${spentSoFar.toLocaleString("es-MX")} already spent
                 <span className="text-slate-500 font-normal">
                   {" "}
-                  ({daysElapsed} días)
+                  ({daysElapsed} days)
                 </span>
               </div>
 
               <div className="text-slate-700 sm:text-right">
-                ${variableMoneyLeft.toLocaleString("es-MX")} para sobrevivir
+                ${variableMoneyLeft.toLocaleString("es-MX")} left to live on
                 <span className="text-slate-500 font-normal">
                   {" "}
-                  ({daysLeft} días)
+                  ({daysLeft} days)
                 </span>
               </div>
             </div>
@@ -192,9 +195,9 @@ export default function EndOfMonthSurvivalPlanOverview({
         </div>
       </div>
 
-      {/* ACCIONES INMEDIATAS */}
+      {/* ACTIONS TO TAKE TODAY */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* Paso 1: Blindar renta */}
+        {/* STEP 1: Protect housing first */}
         <div
           className={`rounded-xl border border-slate-200 bg-white/70 p-4 shadow-sm transition-all duration-300 ${
             stepVisible[0]
@@ -208,22 +211,19 @@ export default function EndOfMonthSurvivalPlanOverview({
             </div>
             <div className="text-[10px] uppercase text-slate-500 font-semibold flex items-center gap-1">
               <FiHome className="text-slate-600" size={14} />
-              <span>Blindar techo primero</span>
+              <span>Protect housing first</span>
             </div>
           </div>
 
           <div className="text-[13px] text-slate-900 font-semibold leading-snug">
-            Aparta ${rentDueRemaining.toLocaleString("es-MX")} MXN
-            sólo para renta/servicios.
+            Move ${rentDueRemaining.toLocaleString("es-MX")} MXN into
+            a “rent / utilities only” bucket.
           </div>
 
-          <div className="text-[11px] text-slate-600 leading-snug mt-2">
-            Ese dinero NO se toca. Evita terminar pidiendo préstamo sólo para pagar el techo.
-          </div>
-
+          
         </div>
 
-        {/* Paso 2: Modo efectivo */}
+        {/* STEP 2: Weekly cash mode */}
         <div
           className={`rounded-xl border border-slate-200 bg-white/70 p-4 shadow-sm transition-all duration-300 ${
             stepVisible[1]
@@ -237,23 +237,19 @@ export default function EndOfMonthSurvivalPlanOverview({
             </div>
             <div className="text-[10px] uppercase text-slate-500 font-semibold flex items-center gap-1">
               <PiWalletBold className="text-slate-600" size={14} />
-              <span>Modo efectivo semanal</span>
+              <span>Weekly cash mode</span>
             </div>
           </div>
 
           <div className="text-[13px] text-slate-900 font-semibold leading-snug">
-            Retira ~${weeklyCash.toFixed(0)} MXN para 7 días
-            (comida + transporte).
+            Withdraw ~${weeklyCash.toFixed(0)} MXN for 7 days
+            (food + transport).
           </div>
 
-          <div className="text-[11px] text-slate-600 leading-snug mt-2">
-            Ese cash físico es tu límite real. Cero “solo esta vez” con tarjeta.
-          </div>
-
-         
+      
         </div>
 
-        {/* Paso 3: Crédito / préstamo */}
+        {/* STEP 3: When debt is allowed */}
         <div
           className={`rounded-xl border border-slate-200 bg-white/70 p-4 shadow-sm transition-all duration-300 ${
             stepVisible[2]
@@ -267,16 +263,12 @@ export default function EndOfMonthSurvivalPlanOverview({
             </div>
             <div className="text-[10px] uppercase text-slate-500 font-semibold flex items-center gap-1">
               <FiCreditCard className="text-slate-600" size={14} />
-              <span>Crédito / préstamo</span>
+              <span>Debt rules</span>
             </div>
           </div>
 
           <div className="text-[13px] text-slate-900 font-semibold leading-snug">
-            ¿Cuándo sí se usa deuda y cuándo NO?
-          </div>
-
-          <div className="text-[11px] text-slate-600 leading-snug mt-2">
-            Sólo si sin ese gasto pierdes ingreso (salud / transporte al trabajo).
+            When is debt OK (and when it’s not)?
           </div>
 
           

@@ -9,7 +9,6 @@ export default function ShortTermGoalsPlan({
   const monthsSlow = Math.ceil(shortTermGoalCost / depositSlow);
   const monthsFast = Math.ceil(shortTermGoalCost / depositFast);
 
-
   const slowPct = Math.min((depositSlow / shortTermGoalCost) * 100, 100);
   const fastPct = Math.min((depositFast / shortTermGoalCost) * 100, 100);
 
@@ -17,13 +16,10 @@ export default function ShortTermGoalsPlan({
     <section className="w-full max-w-3xl mx-auto rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm shadow-md p-6 space-y-6">
       <header className="flex items-start justify-between">
         <div className="space-y-1">
-        
-
           <h2 className="text-lg font-semibold text-slate-900 leading-tight flex items-center gap-2">
             <span role="img" aria-label="target">🎯</span>
-            Meta 3–12 meses
+            3–12 Month Goal
           </h2>
-
         </div>
 
         {onBack && (
@@ -31,65 +27,65 @@ export default function ShortTermGoalsPlan({
             onClick={onBack}
             className="text-xs text-slate-500 hover:text-slate-700 underline"
           >
-            ← Regresar
+            ← Back
           </button>
         )}
       </header>
 
-      {/* BLOQUE: OBJETIVO Y REGLA */}
+      {/* GOAL + RULE BLOCK */}
       <div className="grid grid-cols-2 gap-4 text-sm">
-        {/* Costo objetivo */}
+        {/* Goal cost */}
         <div className="rounded-lg border border-slate-200 bg-white/60 p-4 flex flex-col justify-between">
           <div className="text-[11px] font-medium text-slate-500 uppercase">
-            Objetivo
+            Goal
           </div>
           <div className="text-slate-900 font-semibold text-xl leading-tight">
             ${shortTermGoalCost.toLocaleString("es-MX")} MXN
           </div>
           <div className="text-[12px] text-slate-600 leading-snug mt-1">
-            Laptop / curso / viaje
+            Laptop / course / trip
           </div>
         </div>
 
-        {/* Regla clave */}
+        {/* Core rule */}
         <div className="rounded-lg border border-slate-200 bg-white/60 p-4 flex flex-col justify-between">
           <div className="text-[11px] font-medium text-slate-500 uppercase">
-            Regla
+            Rule
           </div>
           <div className="text-slate-900 font-semibold text-base leading-tight">
-            Cero crédito.
+            No credit.
           </div>
           <div className="text-[12px] text-slate-600 leading-snug mt-1">
-            Lo compras en efectivo. Sin pagos mensuales después.
+            You buy it in cash. No monthly payments after.
           </div>
         </div>
       </div>
 
-      {/* BLOQUE: COMPARA PLANES */}
+      {/* PLANS COMPARISON BLOCK */}
       <div className="rounded-lg border border-slate-200 bg-white/60 p-4">
         <div className="text-[11px] font-semibold text-slate-500 uppercase mb-3">
-          Elige tu modo de ahorro
+          Pick your saving style
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          {/* Plan relajado */}
+          {/* Chill plan */}
           <div className="rounded-lg border border-slate-200 bg-white/70 p-4 flex flex-col">
             <div className="text-[11px] font-medium uppercase text-slate-500 mb-1">
-              Ahorro relajado
+              Chill pace
             </div>
 
             <div className="text-slate-900 font-semibold text-lg leading-tight">
-              ${depositSlow.toLocaleString("es-MX")}/mes
+              ${depositSlow.toLocaleString("es-MX")}/month
             </div>
 
             <div className="text-[12px] text-slate-600 leading-snug mb-3">
-              Listo en ~{monthsSlow} meses
+              Ready in ~{monthsSlow} months
             </div>
 
             {/* mini timeline visual */}
             <div className="space-y-2 text-[11px] text-slate-600">
               <div className="flex items-center justify-between">
-                <span>Mes 1</span>
+                <span>Month 1</span>
                 <span className="font-semibold text-slate-900">
                   ${depositSlow.toLocaleString("es-MX")}
                 </span>
@@ -102,7 +98,7 @@ export default function ShortTermGoalsPlan({
               </div>
 
               <div className="flex items-center justify-between">
-                <span>Mes {monthsSlow}</span>
+                <span>Month {monthsSlow}</span>
                 <span className="font-semibold text-slate-900">
                   ${shortTermGoalCost.toLocaleString("es-MX")} ✅
                 </span>
@@ -116,28 +112,28 @@ export default function ShortTermGoalsPlan({
             </div>
 
             <div className="mt-4 text-[12px] text-slate-500 leading-snug">
-              Pagas poco al mes • llegas más lento • sin intereses.
+              Lower monthly stress • takes longer • still 0 debt.
             </div>
           </div>
 
-          {/* Plan agresivo */}
+          {/* Fast plan */}
           <div className="rounded-lg border border-slate-200 bg-white/70 p-4 flex flex-col">
             <div className="text-[11px] font-medium uppercase text-slate-500 mb-1">
-              Ahorro rápido
+              Fast track
             </div>
 
             <div className="text-slate-900 font-semibold text-lg leading-tight">
-              ${depositFast.toLocaleString("es-MX")}/mes
+              ${depositFast.toLocaleString("es-MX")}/month
             </div>
 
             <div className="text-[12px] text-slate-600 leading-snug mb-3">
-              Listo en ~{monthsFast} meses
+              Ready in ~{monthsFast} months
             </div>
 
             {/* mini timeline visual */}
             <div className="space-y-2 text-[11px] text-slate-600">
               <div className="flex items-center justify-between">
-                <span>Mes 1</span>
+                <span>Month 1</span>
                 <span className="font-semibold text-slate-900">
                   ${depositFast.toLocaleString("es-MX")}
                 </span>
@@ -150,7 +146,7 @@ export default function ShortTermGoalsPlan({
               </div>
 
               <div className="flex items-center justify-between">
-                <span>Mes {monthsFast}</span>
+                <span>Month {monthsFast}</span>
                 <span className="font-semibold text-slate-900">
                   ${shortTermGoalCost.toLocaleString("es-MX")} ✅
                 </span>
@@ -164,13 +160,11 @@ export default function ShortTermGoalsPlan({
             </div>
 
             <div className="mt-4 text-[12px] text-slate-500 leading-snug">
-              Llegas mucho antes • compromiso mensual más alto • igual 0 deuda.
+              You get it sooner • higher monthly push • still no debt.
             </div>
           </div>
         </div>
       </div>
-
-      
     </section>
   );
 }

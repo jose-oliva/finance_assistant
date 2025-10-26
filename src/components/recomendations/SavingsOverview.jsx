@@ -7,9 +7,9 @@ export default function SavingsOverview({
   monthlyExpenses = 20000,
   emergencyMonthlyDeposit = 5000,
   shortTermGoalCost = 15000,
-  shortTermDepositA = 2000, 
-  fastDeposit = 3000,       
-  monthlyLongTerm = 2000,   
+  shortTermDepositA = 2000,
+  fastDeposit = 3000,
+  monthlyLongTerm = 2000,
 }) {
   const trackRef = useRef(null);
   const [active, setActive] = useState(0);
@@ -17,10 +17,12 @@ export default function SavingsOverview({
   useEffect(() => {
     const el = trackRef.current;
     if (!el) return;
+
     const onScroll = () => {
       const i = Math.round(el.scrollLeft / el.clientWidth);
       setActive(i);
     };
+
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
@@ -33,13 +35,14 @@ export default function SavingsOverview({
 
   return (
     <section className="w-full max-w-5xl mx-auto flex flex-col">
+      {/* Header */}
       <div className="flex items-center justify-between mb-3 px-2 sm:px-4">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-            Plan personal
+            Your plan
           </div>
-         
         </div>
+
         <div className="hidden sm:flex items-center gap-2">
           <button
             onClick={() => goTo(Math.max(0, active - 1))}
@@ -58,13 +61,14 @@ export default function SavingsOverview({
         </div>
       </div>
 
-      {/* Carrusel con scroll-snap */}
+      {/* Carousel with snap scrolling */}
       <div
         ref={trackRef}
         className="relative overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar"
         style={{ scrollbarWidth: "none" }}
       >
         <div className="flex w-full">
+          {/* Slide 1: Emergency Fund */}
           <div className="snap-center shrink-0 w-full px-2 sm:px-4">
             <EmergencyPlanFund
               monthlyExpenses={monthlyExpenses}
@@ -72,7 +76,7 @@ export default function SavingsOverview({
             />
           </div>
 
-          {/* Slide 2: Meta 3–12 meses */}
+          {/* Slide 2: 3–12 Month Goal */}
           <div className="snap-center shrink-0 w-full px-2 sm:px-4">
             <ShortTermGoalsPlan
               shortTermGoalCost={shortTermGoalCost}
@@ -81,27 +85,26 @@ export default function SavingsOverview({
             />
           </div>
 
-          {/* Slide 3: Largo Plazo */}
+          {/* Slide 3: Long Term */}
           <div className="snap-center shrink-0 w-full px-2 sm:px-4">
             <LongTermPlan monthlyLongTerm={monthlyLongTerm} />
           </div>
         </div>
       </div>
 
-      {/* Paginación (puntitos) */}
+      {/* Pagination dots */}
       <div className="mt-3 flex items-center justify-center gap-2">
         {[0, 1, 2].map((i) => (
           <button
             key={i}
             onClick={() => goTo(i)}
-            aria-label={`Ir a slide ${i + 1}`}
+            aria-label={`Go to slide ${i + 1}`}
             className={`h-2.5 rounded-full transition-all ${
               active === i ? "w-6 bg-slate-700" : "w-2.5 bg-slate-300"
             }`}
           />
         ))}
       </div>
-
     </section>
   );
 }

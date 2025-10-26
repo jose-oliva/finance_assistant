@@ -1139,7 +1139,7 @@ export const UI = ({ hidden, ...props }) => {
           )}     */}
           <div className="flex flex-col items-center justify-center w-3/5 h-full p-8">
 
-            {/* <div className="flex flex-col w-3/5 h-full p-8 ">
+            <div className="flex flex-col w-3/5 h-full p-8 ">
               {activePlan === null && (
                 <SavingsOverview
                   monthlyExpenses={20000}
@@ -1150,12 +1150,12 @@ export const UI = ({ hidden, ...props }) => {
                   onSelect={(planKey) => setActivePlan(planKey)}
                 />
               )}
-            </div> */}
+            </div>
 
             
 
 
-            <div className="flex flex-col w-full h-full p-8 overflow-y-auto">
+            {/* <div className="flex flex-col w-full h-full p-8 overflow-y-auto">
 
               {activeSurvivalStep === null && (
                 <EndOfMonthSurvivalPlanOverview
@@ -1190,7 +1190,7 @@ export const UI = ({ hidden, ...props }) => {
                   onBack={() => setActiveSurvivalStep(null)}
                 />
               )}
-            </div>
+            </div> */}
 
             
 
