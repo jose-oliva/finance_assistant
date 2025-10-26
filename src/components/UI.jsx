@@ -15,10 +15,8 @@ import { FaMicrophone } from "react-icons/fa6";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { endOfISOWeek, format, subMinutes } from 'date-fns';
 import SavingsOverview from "./recomendations/SavingsOverview";
-import EmergencyFundPlan from "./recomendations/savingPlans/EmergencyPlanFund";
-import ShortTermGoalsPlan from "./recomendations/savingPlans/ShortTermGoalsPlan";
-import LongTermPlan from "./recomendations/savingPlans/LongTermPlan";
-import EndOfMonthSurvivalPlan from "./recomendations/EndOfMonthSurvivalPlan";
+import EndOfMonthSurvivalPlanOverview from "./recomendations/EndOfMonthSurvivalPlanOverview";
+
 
 
 
@@ -27,6 +25,7 @@ import EndOfMonthSurvivalPlan from "./recomendations/EndOfMonthSurvivalPlan";
 export const UI = ({ hidden, ...props }) => {
   const [loadingR, setLoadingR] = useState(true);
   const [activePlan, setActivePlan] = useState(null);
+  const [activeSurvivalStep, setActiveSurvivalStep] = useState(null);
 
 
   const initialData = [
@@ -1140,7 +1139,7 @@ export const UI = ({ hidden, ...props }) => {
           )}     */}
           <div className="flex flex-col items-center justify-center w-3/5 h-full p-8">
 
-            <div className="flex flex-col w-3/5 h-full p-8 ">
+            {/* <div className="flex flex-col w-3/5 h-full p-8 ">
               {activePlan === null && (
                 <SavingsOverview
                   monthlyExpenses={20000}
@@ -1151,42 +1150,49 @@ export const UI = ({ hidden, ...props }) => {
                   onSelect={(planKey) => setActivePlan(planKey)}
                 />
               )}
+            </div> */}
 
-              {activePlan === "emergency" && (
-                <EmergencyFundPlan
-                  monthlyExpenses={20000}
-                  emergencyMonthlyDeposit={5000}
-                  onBack={() => setActivePlan(null)}
+            
+
+
+            <div className="flex flex-col w-full h-full p-8 overflow-y-auto">
+
+              {activeSurvivalStep === null && (
+                <EndOfMonthSurvivalPlanOverview
+                
+                  daysLeft={20}
+                  rentDueRemaining={6800}     
+                  variableMoneyLeft={3200}   
+                  currentBurnRate={1600}     
+                  onSelectStep={(which) => {
+                    setActiveSurvivalStep(which);
+                  }}
                 />
               )}
 
-              {activePlan === "shortTerm" && (
-                <ShortTermGoalsPlan
-                  shortTermGoalCost={15000}
-                  depositSlow={2000}
-                  depositFast={3000}
-                  onBack={() => setActivePlan(null)}
+              {activeSurvivalStep === "rent" && (
+                <SurvivalStepRent
+                  rentDueRemaining={6800}
+                  onBack={() => setActiveSurvivalStep(null)}
                 />
               )}
 
-              {activePlan === "longTerm" && (
-                <LongTermPlan
-                  monthlyLongTerm={2000}
-                  onBack={() => setActivePlan(null)}
+              {activeSurvivalStep === "cash" && (
+                <SurvivalStepCash
+                  dailyCap={160}         
+                  weeklyCash={1120}      
+                  onBack={() => setActiveSurvivalStep(null)}
+                />
+              )}
+
+              {activeSurvivalStep === "credit" && (
+                <SurvivalStepCredit
+                  onBack={() => setActiveSurvivalStep(null)}
                 />
               )}
             </div>
 
             
-
-
-
-            {/* <EndOfMonthSurvivalPlan
-              cashAvailable={1800}
-              daysLeft={5}
-              essentialBills={900}
-              minDebtPayment={200}
-            /> */}
 
 
           </div>

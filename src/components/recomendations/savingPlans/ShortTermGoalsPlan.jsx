@@ -15,12 +15,9 @@ export default function ShortTermGoalsPlan({
 
   return (
     <section className="w-full max-w-3xl mx-auto rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm shadow-md p-6 space-y-6">
-      {/* HEADER */}
       <header className="flex items-start justify-between">
         <div className="space-y-1">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-blue-700 bg-blue-100 border border-blue-300 rounded-full px-2 py-0.5 w-fit">
-            Caja 2
-          </div>
+        
 
           <h2 className="text-lg font-semibold text-slate-900 leading-tight flex items-center gap-2">
             <span role="img" aria-label="target">🎯</span>

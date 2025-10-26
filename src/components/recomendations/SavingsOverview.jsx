@@ -1,149 +1,107 @@
-// src/components/finance/SavingsOverview.jsx
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import EmergencyPlanFund from "./savingPlans/EmergencyPlanFund";
+import ShortTermGoalsPlan from "./savingPlans/ShortTermGoalsPlan";
+import LongTermPlan from "./savingPlans/LongTermPlan";
 
 export default function SavingsOverview({
-  monthlyExpenses = 20000,        // caja 1
-  emergencyMonthlyDeposit = 5000, // caja 1
-  shortTermGoalCost = 15000,      // caja 2
-  shortTermDepositA = 2000,       // caja 2
-  longTermMonthly = 2000,         // caja 3
-  onSelect,                       // callback para abrir el detalle
+  monthlyExpenses = 20000,
+  emergencyMonthlyDeposit = 5000,
+  shortTermGoalCost = 15000,
+  shortTermDepositA = 2000, 
+  fastDeposit = 3000,       
+  monthlyLongTerm = 2000,   
 }) {
-  // cálculos mínimos para mostrar números rápidos
-  const monthsToOneMonthFund = Math.ceil(
-    monthlyExpenses / emergencyMonthlyDeposit
-  );
-  const monthsShortA = Math.ceil(shortTermGoalCost / shortTermDepositA);
-  const year5 = longTermMonthly * 60;
+  const trackRef = useRef(null);
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const i = Math.round(el.scrollLeft / el.clientWidth);
+      setActive(i);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const goTo = (i) => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+  };
 
   return (
-    <section className="w-full max-w-3xl mx-auto rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm shadow-md p-4 space-y-6">
-      {/* HEADER */}
-      <header className="space-y-1">
-        <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-2 leading-tight">
-          <span role="img" aria-label="plan">
-            💼
-          </span>
-          Tu plan financiero
-        </h2>
-        
-      </header>
+    <section className="w-full max-w-5xl mx-auto flex flex-col">
+      <div className="flex items-center justify-between mb-3 px-2 sm:px-4">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            Plan personal
+          </div>
+         
+        </div>
+        <div className="hidden sm:flex items-center gap-2">
+          <button
+            onClick={() => goTo(Math.max(0, active - 1))}
+            className="px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40"
+            disabled={active === 0}
+          >
+            ←
+          </button>
+          <button
+            onClick={() => goTo(Math.min(2, active + 1))}
+            className="px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40"
+            disabled={active === 2}
+          >
+            →
+          </button>
+        </div>
+      </div>
 
-      {/* CAJA 1 */}
-      <button
-        onClick={() => onSelect && onSelect("emergency")}
-        className="w-full text-left rounded-xl border border-slate-200 bg-white/60 p-4 hover:bg-slate-50 transition"
+      {/* Carrusel con scroll-snap */}
+      <div
+        ref={trackRef}
+        className="relative overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar"
+        style={{ scrollbarWidth: "none" }}
       >
-        <div className="flex items-start justify-between flex-wrap gap-3">
-          <div className="flex flex-col">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700 bg-emerald-100 border border-emerald-300 rounded-full px-2 py-0.5 w-fit">
-              Caja 1
-            </div>
-
-            <div className="mt-2">
-              <div className="text-slate-900 font-semibold text-base leading-snug">
-                Fondo de emergencia
-              </div>
-              <div className="text-[13px] text-slate-600 leading-snug">
-                Tu escudo anti-préstamo (que no tengas que endeudarte si algo
-                sale mal).
-              </div>
-            </div>
+        <div className="flex w-full">
+          <div className="snap-center shrink-0 w-full px-2 sm:px-4">
+            <EmergencyPlanFund
+              monthlyExpenses={monthlyExpenses}
+              emergencyMonthlyDeposit={emergencyMonthlyDeposit}
+            />
           </div>
 
-          <div className="text-right">
-            <div className="text-sm text-slate-900 font-semibold leading-tight">
-              1 mes de vida ≈ $
-              {monthlyExpenses.toLocaleString("es-MX")} MXN
-            </div>
-            <div className="text-[12px] text-slate-500 leading-tight">
-              Aportando $
-              {emergencyMonthlyDeposit.toLocaleString("es-MX")}/mes
-              lo completas en ~{monthsToOneMonthFund} meses.
-            </div>
-            <div className="text-[12px] text-blue-600 font-medium mt-2">
-              Ver plan →
-            </div>
+          {/* Slide 2: Meta 3–12 meses */}
+          <div className="snap-center shrink-0 w-full px-2 sm:px-4">
+            <ShortTermGoalsPlan
+              shortTermGoalCost={shortTermGoalCost}
+              depositSlow={shortTermDepositA}
+              depositFast={fastDeposit}
+            />
+          </div>
+
+          {/* Slide 3: Largo Plazo */}
+          <div className="snap-center shrink-0 w-full px-2 sm:px-4">
+            <LongTermPlan monthlyLongTerm={monthlyLongTerm} />
           </div>
         </div>
-      </button>
+      </div>
 
-      {/* CAJA 2 */}
-      <button
-        onClick={() => onSelect && onSelect("shortTerm")}
-        className="w-full text-left rounded-xl border border-slate-200 bg-white/60 p-4 hover:bg-slate-50 transition"
-      >
-        <div className="flex items-start justify-between flex-wrap gap-3">
-          <div className="flex flex-col">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-blue-700 bg-blue-100 border border-blue-300 rounded-full px-2 py-0.5 w-fit">
-              Caja 2
-            </div>
+      {/* Paginación (puntitos) */}
+      <div className="mt-3 flex items-center justify-center gap-2">
+        {[0, 1, 2].map((i) => (
+          <button
+            key={i}
+            onClick={() => goTo(i)}
+            aria-label={`Ir a slide ${i + 1}`}
+            className={`h-2.5 rounded-full transition-all ${
+              active === i ? "w-6 bg-slate-700" : "w-2.5 bg-slate-300"
+            }`}
+          />
+        ))}
+      </div>
 
-            <div className="mt-2">
-              <div className="text-slate-900 font-semibold text-base leading-snug">
-                Meta 3–12 meses
-              </div>
-              <div className="text-[13px] text-slate-600 leading-snug">
-                Comprar algo grande sin deuda (laptop, curso, viaje).
-              </div>
-            </div>
-          </div>
-
-          <div className="text-right">
-            <div className="text-sm text-slate-900 font-semibold leading-tight">
-              Objetivo: $
-              {shortTermGoalCost.toLocaleString("es-MX")} MXN
-            </div>
-            <div className="text-[12px] text-slate-500 leading-tight">
-              Guardando $
-              {shortTermDepositA.toLocaleString("es-MX")}/mes
-              lo logras en ~{monthsShortA} meses.
-            </div>
-            <div className="text-[12px] text-blue-600 font-medium mt-2">
-              Ver plan →
-            </div>
-          </div>
-        </div>
-      </button>
-
-      {/* CAJA 3 */}
-      <button
-        onClick={() => onSelect && onSelect("longTerm")}
-        className="w-full text-left rounded-xl border border-slate-200 bg-white/60 p-4 hover:bg-slate-50 transition"
-      >
-        <div className="flex items-start justify-between flex-wrap gap-3">
-          <div className="flex flex-col">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-purple-700 bg-purple-100 border border-purple-300 rounded-full px-2 py-0.5 w-fit">
-              Caja 3
-            </div>
-
-            <div className="mt-2">
-              <div className="text-slate-900 font-semibold text-base leading-snug">
-                Largo plazo
-              </div>
-              <div className="text-[13px] text-slate-600 leading-snug">
-                Yo futura no quiere estar ahogada a los 30.
-              </div>
-            </div>
-          </div>
-
-          <div className="text-right">
-            <div className="text-sm text-slate-900 font-semibold leading-tight">
-              $ {longTermMonthly.toLocaleString("es-MX")}/mes
-            </div>
-            <div className="text-[12px] text-slate-500 leading-tight">
-              En 5 años ≈ $
-              {year5.toLocaleString("es-MX")} MXN
-              acumulados.
-            </div>
-            <div className="text-[12px] text-blue-600 font-medium mt-2">
-              Ver plan →
-            </div>
-          </div>
-        </div>
-      </button>
-
-      
     </section>
   );
 }
